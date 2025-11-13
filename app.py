@@ -78,6 +78,7 @@ tabs = st.tabs(
         "🧲 Física",
         "⚗️ Química",
         "🎯 PRUEBATE",
+        "🏠 vamos a pasar con 10",
         "📜 Historial",
     ]
 )
