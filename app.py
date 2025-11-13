@@ -112,17 +112,14 @@ with tabs[0]:
 
 # ----- Tab MATEMÁTICAS -----
 with tabs[1]:
-    st.subheader("🧮 Matemáticas")
+    st.markdown("## 🧮 Matemáticas")
 
     topic_names = [t.name for t in MATH_TOPICS]
     sel_topic_name = st.selectbox("Selecciona un tema", topic_names)
     topic = MATH_TOPICS[topic_names.index(sel_topic_name)]
 
-    col_exp, col_ex, col_exe = st.columns(3)
-
-    # Explicación
-    with col_exp:
-        st.markdown("#### Explicación")
+    # Diseño: todo en una sola columna, con secciones desplegables
+    with st.expander("📘 Explicación del tema", expanded=True):
         st.write(topic.explain())
         if has_ai():
             if st.button("Pedir explicación IA del tema", key="math_ai_topic"):
@@ -134,19 +131,16 @@ with tabs[1]:
                 )
                 st.info(txt)
 
-    # Ejemplo
-    with col_ex:
-        st.markdown("#### Ejemplo")
+    with st.expander("🧪 Ejemplo resuelto", expanded=False):
         enun_ex, sol_ex = topic.example()
         st.write(enun_ex)
-        if st.toggle("Mostrar solución", key="math_show_example"):
+        if st.button("Mostrar solución del ejemplo", key="math_show_example"):
             st.success(sol_ex)
 
-    # Ejercicio
-    with col_exe:
-        st.markdown("#### Ejercicio")
+    with st.expander("📝 Ejercicio interactivo", expanded=False):
         enun_exe, expected, unit, hint = topic.exercise()
         st.write(enun_exe)
+
         user = st.number_input(
             "Tu respuesta",
             value=0.0,
@@ -155,8 +149,9 @@ with tabs[1]:
             key="math_answer",
         )
 
-        cols_btn = st.columns(2)
-        with cols_btn[0]:
+        col_btn1, col_btn2 = st.columns(2)
+
+        with col_btn1:
             if st.button("Corregir", key="math_check"):
                 ok = within_tol(expected, float(user), st.session_state.tol_pct)
                 add_history(
@@ -172,10 +167,15 @@ with tabs[1]:
                 else:
                     st.error(f"INCORRECTO ❌  — Solución: {expected:.6f} {unit}")
                     st.caption("Hint: " + hint)
-        with cols_btn[1]:
+
+        with col_btn2:
             if has_ai():
                 if st.button("Pedir explicación IA de este ejercicio", key="math_ai_exercise"):
-                    prompt_ai = f"{enun_exe}\nEl resultado correcto es aproximadamente {expected:.6f} {unit}."
+                    prompt_ai = (
+                        f"{enun_exe}\n"
+                        f"El resultado correcto es aproximadamente {expected:.6f} {unit}.\n"
+                        f"La respuesta del alumno fue: {float(user):.6f} {unit}."
+                    )
                     txt = ask_ai(
                         topic=f"Matemáticas: {topic.name}",
                         prompt=prompt_ai,
@@ -241,5 +241,4 @@ with tabs[5]:
             file_name="smartform_historial.csv",
             mime="text/csv",
         )
-        
 
