@@ -1,9 +1,17 @@
 # path: app.py
-# Smart Form - panel con sidebar + tabs básicas
-
 from __future__ import annotations
 
 import streamlit as st
+
+from core.utils import (
+    within_tol,
+    add_history,
+    get_history_df,
+    history_to_csv,
+    clear_history,
+)
+from core.topics_math import MATH_TOPICS
+from core.ai import ask_ai, has_ai
 
 
 def init_state() -> None:
@@ -12,8 +20,6 @@ def init_state() -> None:
         st.session_state.tol_pct = 0.05  # 5%
     if "pruebate_q" not in st.session_state:
         st.session_state.pruebate_q = 8
-    if "api_key" not in st.session_state:
-        st.session_state.api_key = ""
 
 
 # ---------- Config de pagina ----------
@@ -38,7 +44,7 @@ with st.sidebar:
         value=float(st.session_state.tol_pct * 100),
         step=0.1,
     )
-    st.session_state.tol_pct = tol_pct_ui / 100.0  # guardamos como fracción
+    st.session_state.tol_pct = tol_pct_ui / 100.0
 
     # Preguntas de PRUEBATE
     pruebate_q_ui = st.slider(
@@ -52,17 +58,10 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # API key (para IA, opcional)
-    st.caption("IA opcional (OpenAI):")
-    api_key_ui = st.text_input(
-        "OPENAI_API_KEY",
-        type="password",
-        value=st.session_state.api_key,
-        help="Si la dejas vacía, la app funciona sin IA.",
-    )
-    st.session_state.api_key = api_key_ui.strip()
+    if st.button("🧹 Borrar historial"):
+        clear_history()
+        st.success("Historial borrado.")
 
-    st.markdown("---")
     st.caption(
         f"🧪 Config actual: tolerancia = {st.session_state.tol_pct * 100:.1f}%, "
         f"PRUEBATE = {st.session_state.pruebate_q} preguntas."
@@ -101,22 +100,89 @@ with tabs[0]:
 
     with col2:
         st.subheader("Estado de IA")
-        if st.session_state.api_key:
-            st.success("API key configurada. IA lista para usarse.")
+        if has_ai():
+            st.success(
+                "IA activada (HuggingFace). Los botones de 'Pedir explicación IA' estarán disponibles."
+            )
         else:
-            st.info("Sin API key. La app usará solo lógica local (sin IA).")
+            st.info(
+                "IA no configurada. El dueño de la app debe añadir HF_TOKEN en los secrets de Streamlit "
+                "para activar las explicaciones con IA."
+            )
 
 # ----- Tab MATEMÁTICAS -----
 with tabs[1]:
     st.subheader("🧮 Matemáticas")
-    st.write(
-        "Aquí irán los módulos de Matemáticas:\n"
-        "- Ecuaciones lineales\n"
-        "- Ecuaciones cuadráticas\n"
-        "- Pitágoras\n"
-        "- Pendiente entre puntos\n\n"
-        "En el siguiente paso conectaremos esta pestaña con funciones en `core/topics_math.py`."
-    )
+
+    topic_names = [t.name for t in MATH_TOPICS]
+    sel_topic_name = st.selectbox("Selecciona un tema", topic_names)
+    topic = MATH_TOPICS[topic_names.index(sel_topic_name)]
+
+    col_exp, col_ex, col_exe = st.columns(3)
+
+    # Explicación
+    with col_exp:
+        st.markdown("#### Explicación")
+        st.write(topic.explain())
+        if has_ai():
+            if st.button("Pedir explicación IA del tema", key="math_ai_topic"):
+                txt = ask_ai(
+                    topic=f"Matemáticas: {topic.name}",
+                    prompt=topic.explain(),
+                    expected=None,
+                    unit="",
+                )
+                st.info(txt)
+
+    # Ejemplo
+    with col_ex:
+        st.markdown("#### Ejemplo")
+        enun_ex, sol_ex = topic.example()
+        st.write(enun_ex)
+        if st.toggle("Mostrar solución", key="math_show_example"):
+            st.success(sol_ex)
+
+    # Ejercicio
+    with col_exe:
+        st.markdown("#### Ejercicio")
+        enun_exe, expected, unit, hint = topic.exercise()
+        st.write(enun_exe)
+        user = st.number_input(
+            "Tu respuesta",
+            value=0.0,
+            step=0.1,
+            format="%.6f",
+            key="math_answer",
+        )
+
+        cols_btn = st.columns(2)
+        with cols_btn[0]:
+            if st.button("Corregir", key="math_check"):
+                ok = within_tol(expected, float(user), st.session_state.tol_pct)
+                add_history(
+                    area="Matemáticas",
+                    tema=topic.name,
+                    tipo="Ejercicio",
+                    correcto=expected,
+                    usuario=float(user),
+                    acierto=ok,
+                )
+                if ok:
+                    st.success(f"CORRECTO ✅  — Solución: {expected:.6f} {unit}")
+                else:
+                    st.error(f"INCORRECTO ❌  — Solución: {expected:.6f} {unit}")
+                    st.caption("Hint: " + hint)
+        with cols_btn[1]:
+            if has_ai():
+                if st.button("Pedir explicación IA de este ejercicio", key="math_ai_exercise"):
+                    prompt_ai = f"{enun_exe}\nEl resultado correcto es aproximadamente {expected:.6f} {unit}."
+                    txt = ask_ai(
+                        topic=f"Matemáticas: {topic.name}",
+                        prompt=prompt_ai,
+                        expected=expected,
+                        unit=unit,
+                    )
+                    st.info(txt)
 
 # ----- Tab FÍSICA -----
 with tabs[2]:
@@ -162,7 +228,18 @@ with tabs[4]:
 # ----- Tab HISTORIAL -----
 with tabs[5]:
     st.subheader("📜 Historial")
-    st.write(
-        "Aquí se mostrará tu historial de ejercicios y resultados.\n\n"
-        "Pronto guardaremos cada intento en una tabla para que puedas ver tu progreso."
-    )
+    df = get_history_df()
+    if df.empty:
+        st.info("Todavía no hay registros. Resuelve algunos ejercicios primero.")
+    else:
+        st.write("Historial de intentos:")
+        st.dataframe(df, use_container_width=True, height=400)
+        csv_bytes = history_to_csv(df)
+        st.download_button(
+            "Descargar historial en CSV",
+            data=csv_bytes,
+            file_name="smartform_historial.csv",
+            mime="text/csv",
+        )
+        
+
