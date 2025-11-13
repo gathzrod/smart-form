@@ -22,6 +22,51 @@ def init_state() -> None:
         st.session_state.pruebate_q = 8
 
 
+def inject_global_css() -> None:
+    """Pequeños ajustes de estilo global para que se vea más limpio/suave."""
+    st.markdown(
+        """
+        <style>
+        /* Centrar contenido principal y darle aire */
+        .main > div {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Tabs más redondas y separadas */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.5rem;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.4rem 1.1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Cards suaves para métricas y alertas */
+        .stMetric, .stAlert {
+            border-radius: 12px !important;
+        }
+
+        /* Botones un poco más redondos */
+        .stButton button {
+            border-radius: 999px;
+        }
+
+        /* Expander con borde suave */
+        .streamlit-expanderHeader {
+            font-weight: 600;
+        }
+        .streamlit-expander {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 # ---------- Config de página ----------
 st.set_page_config(
     page_title="Smart Form",
@@ -30,17 +75,18 @@ st.set_page_config(
 )
 
 init_state()
+inject_global_css()
 
-# ---------- SIDEBAR (solo branding + opciones generales) ----------
+# ---------- SIDEBAR ----------
 with st.sidebar:
     st.markdown("## 🧪 Smart Form")
     st.caption("Formulario interactivo para Matemáticas, Física y Química.")
 
     st.markdown("---")
     if has_ai():
-        st.success("IA: activada (HuggingFace).")
+        st.success("IA: activada (modo mixto local / HuggingFace).")
     else:
-        st.info("IA: no configurada.")
+        st.info("IA: solo modo local (sin HuggingFace).")
 
     st.markdown("---")
     if st.button("🧹 Borrar historial"):
@@ -67,9 +113,9 @@ with tabs[0]:
     st.write(
         "Bienvenido a **Smart Form**.\n\n"
         "• Usa las pestañas superiores para navegar entre materias.\n"
-        "• La configuración de tolerancia y número de preguntas de PRUEBATE "
-        "se encuentra dentro de la pestaña **PRUEBATE**.\n"
-        "• Si la IA está activada, verás botones para pedir explicaciones adicionales."
+        "• La configuración de tolerancia y número de preguntas del modo **PRUEBATE** "
+        "se encuentra dentro de la pestaña correspondiente.\n"
+        "• Si la IA está activa, verás botones para pedir explicaciones adicionales."
     )
 
     st.markdown("---")
@@ -84,13 +130,12 @@ with tabs[0]:
         st.subheader("Estado de IA")
         if has_ai():
             st.success(
-                "IA activada (HuggingFace). Los botones de 'Pedir explicación IA' "
-                "están disponibles en los ejercicios."
+                "IA activada (se intentará usar HuggingFace; si falla, se usa explicación local)."
             )
         else:
             st.info(
-                "IA no configurada. El dueño de la app puede añadir HF_TOKEN en los secrets "
-                "de Streamlit para activar las explicaciones generadas."
+                "IA sin conexión a modelos externos. Se usan solo explicaciones locales "
+                "basadas en el enunciado y la teoría."
             )
 
 # ----- Tab MATEMÁTICAS -----
@@ -101,11 +146,19 @@ with tabs[1]:
     sel_topic_name = st.selectbox("Selecciona un tema", topic_names)
     topic = MATH_TOPICS[topic_names.index(sel_topic_name)]
 
-    # Diseño: un panel ancho con secciones colapsables
     with st.expander("📘 Explicación del tema", expanded=True):
         st.write(topic.explain())
         if has_ai():
             if st.button("Pedir explicación IA del tema", key="math_ai_topic"):
+                txt = ask_ai(
+                    topic=f"Matemáticas: {topic.name}",
+                    prompt=topic.explain(),
+                    expected=None,
+                    unit="",
+                )
+                st.info(txt)
+        else:
+            if st.button("Pedir explicación (modo local)", key="math_ai_topic_local"):
                 txt = ask_ai(
                     topic=f"Matemáticas: {topic.name}",
                     prompt=topic.explain(),
@@ -152,20 +205,19 @@ with tabs[1]:
                     st.caption("Pista: " + hint)
 
         with col_btn2:
-            if has_ai():
-                if st.button("Pedir explicación IA de este ejercicio", key="math_ai_exercise"):
-                    prompt_ai = (
-                        f"{enun_exe}\n"
-                        f"El resultado correcto es aproximadamente {expected:.6f} {unit}.\n"
-                        f"La respuesta del alumno fue: {float(user):.6f} {unit}."
-                    )
-                    txt = ask_ai(
-                        topic=f"Matemáticas: {topic.name}",
-                        prompt=prompt_ai,
-                        expected=expected,
-                        unit=unit,
-                    )
-                    st.info(txt)
+            if st.button("Pedir explicación IA de este ejercicio", key="math_ai_exercise"):
+                prompt_ai = (
+                    f"{enun_exe}\n"
+                    f"La respuesta del alumno fue: {float(user):.6f} {unit} "
+                    f"(el sistema conoce un valor de referencia para revisar)."
+                )
+                txt = ask_ai(
+                    topic=f"Matemáticas: {topic.name}",
+                    prompt=prompt_ai,
+                    expected=expected,
+                    unit=unit,
+                )
+                st.info(txt)
 
 # ----- Tab FÍSICA -----
 with tabs[2]:
@@ -176,7 +228,8 @@ with tabs[2]:
         "- Energía cinética\n"
         "- Ley de Ohm\n"
         "- MRU / MRUA\n\n"
-        "Cada tema tendrá su explicación, ejemplo y ejercicio interactivo con la misma interfaz que Matemáticas."
+        "Cada tema tendrá su explicación, ejemplo y ejercicio interactivo "
+        "con la misma interfaz que Matemáticas."
     )
 
 # ----- Tab QUÍMICA -----
