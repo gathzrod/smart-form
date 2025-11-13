@@ -26,8 +26,9 @@ def has_ai() -> bool:
 def ask_ai(topic: str, prompt: str, expected: Optional[float] = None, unit: str = "") -> str:
     """
     Pide una explicación / pista a un modelo open-source en HuggingFace.
-    Usa un modelo instruct gratuito (por ejemplo, Phi-3-mini).
-    Si no hay token, devuelve una pista local.
+
+    Usa un modelo instruct gratuito (flan-t5-large). Si no hay token
+    o algo falla, devuelve un mensaje local amigable.
     """
     token = _get_hf_token()
     if not token:
@@ -38,14 +39,16 @@ def ask_ai(topic: str, prompt: str, expected: Optional[float] = None, unit: str 
             base += "Pista: revisa la teoría y las unidades paso a paso."
         return base
 
-    model_id = "microsoft/Phi-3-mini-4k-instruct"
+    # Modelo estable para instrucciones
+    model_id = "google/flan-t5-large"
+
     url = f"https://api-inference.huggingface.co/models/{model_id}"
     headers = {"Authorization": f"Bearer {token}"}
 
     system_msg = (
         "Eres un tutor de ciencias para nivel prepa/primer semestre. "
-        "Explica en pasos claros, sin LaTeX, sin símbolos raros, máximo 6 viñetas. "
-        "Escribe en español. Usa lenguaje sencillo. "
+        "Explica en pasos claros, sin LaTeX, sin símbolos raros. "
+        "Escribe en español, con máximo 7 frases. "
         "Al final añade una sección 'Chequeo rápido' con 2 puntos para que el alumno verifique su resultado."
     )
 
@@ -54,10 +57,10 @@ def ask_ai(topic: str, prompt: str, expected: Optional[float] = None, unit: str 
         user_msg += f"Resultado numérico esperado (aprox): {expected:.6f} {unit}\n"
 
     payload = {
-        "inputs": f"{system_msg}\n\nAlumno: {user_msg}\nExplica y da pistas útiles.",
+        "inputs": f"{system_msg}\n\nAlumno: {user_msg}",
         "parameters": {
-            "max_new_tokens": 400,
-            "temperature": 0.3,
+            "max_new_tokens": 256,
+            "temperature": 0.25,
         },
     }
 
@@ -66,11 +69,19 @@ def ask_ai(topic: str, prompt: str, expected: Optional[float] = None, unit: str 
         resp.raise_for_status()
         data = resp.json()
 
+        # Serverless Inference normalmente devuelve lista con 'generated_text'
         if isinstance(data, list) and data and "generated_text" in data[0]:
             text = data[0]["generated_text"]
         else:
+            # Otros modelos pueden devolver texto directamente
             text = str(data)
 
         return text.strip()
-    except Exception as e:
-        return f"[IA] No se pudo contactar al modelo de HuggingFace. Error: {e}"
+
+    except requests.exceptions.Timeout:
+        return "[IA] El modelo tardó demasiado en responder. Intenta de nuevo."
+    except requests.exceptions.HTTPError as http_err:
+        # Mensaje genérico (no mostramos URL ni cosas feas al usuario)
+        return f"[IA] No se pudo contactar al modelo de HuggingFace (HTTP {resp.status_code})."
+    except Exception:
+        return "[IA] Ocurrió un error inesperado al llamar a la IA. Intenta más tarde."
