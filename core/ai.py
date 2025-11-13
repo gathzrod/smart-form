@@ -23,23 +23,44 @@ def has_ai() -> bool:
     return _get_hf_token() is not None
 
 
+def _local_fallback(topic: str, prompt: str, expected: Optional[float], unit: str) -> str:
+    """Genera una explicación local cuando la API externa no está disponible."""
+    text = f"[IA local] Explicación generada sin conectarse a HuggingFace.\n\n"
+    text += f"Tema: {topic}\n\n"
+
+    # Resumen muy sencillo del enunciado
+    text += "Resumen del ejercicio:\n"
+    text += f"{prompt.strip()}\n\n"
+
+    if expected is not None:
+        text += "Resultado de referencia:\n"
+        text += f"≈ {expected:.6f} {unit}\n\n"
+
+    text += "Cómo podrías pensarlo paso a paso:\n"
+    text += "- Identifica qué datos te dan y qué variable quieres encontrar.\n"
+    text += "- Escribe la fórmula general del tema.\n"
+    text += "- Sustituye los valores en la fórmula, con cuidado en los signos y las unidades.\n"
+    text += "- Haz las operaciones con calma y revisa el orden (suma, resta, multiplicación, división, raíz, etc.).\n\n"
+    text += "Chequeo rápido:\n"
+    text += "1) ¿Tus unidades coinciden con lo que se pide (ej. metros, segundos, mol, etc.)?\n"
+    text += "2) ¿Tu número tiene sentido (ni ridículamente grande ni 0 si no debería serlo)?\n"
+
+    return text
+
+
 def ask_ai(topic: str, prompt: str, expected: Optional[float] = None, unit: str = "") -> str:
     """
     Pide una explicación / pista a un modelo open-source en HuggingFace.
 
-    Usa un modelo instruct gratuito. Si no hay token o algo falla,
-    devuelve un mensaje local amigable.
+    Si algo falla (410, timeout, etc.), devuelve una explicación local
+    basada en el enunciado y el resultado correcto.
     """
     token = _get_hf_token()
     if not token:
-        base = f"[IA local] No hay HF_TOKEN configurado en el servidor.\n\nTema: {topic}\n"
-        if expected is not None:
-            base += f"Pista aproximada: el resultado debería andar cerca de {expected:.4f} {unit}."
-        else:
-            base += "Pista: revisa la teoría y las unidades paso a paso."
-        return base
+        return _local_fallback(topic, prompt, expected, unit)
 
-    # Modelo ligero y estable para instrucciones
+    # Modelo ligero orientado a instrucciones.
+    # Si tu cuenta habilita otro modelo, solo cambia este ID.
     model_id = "google/flan-t5-small"
 
     url = f"https://api-inference.huggingface.co/models/{model_id}"
@@ -77,15 +98,13 @@ def ask_ai(topic: str, prompt: str, expected: Optional[float] = None, unit: str 
         return text.strip()
 
     except requests.exceptions.Timeout:
-        return "[IA] El modelo tardó demasiado en responder. Intenta de nuevo."
+        # Si tarda demasiado, usamos explicación local.
+        return _local_fallback(topic, prompt, expected, unit)
+
     except requests.exceptions.HTTPError:
-        # Si el modelo no está disponible en la API gratuita (410, 404, etc.)
-        code = resp.status_code if resp is not None else "?"
-        if code == 410:
-            return (
-                "[IA] El modelo gratuito escogido no está disponible en este momento "
-                "(HTTP 410). Intenta más tarde o avisa al administrador para cambiar de modelo."
-            )
-        return f"[IA] No se pudo contactar al modelo de HuggingFace (HTTP {code})."
+        # 410 u otros códigos: el modelo no está disponible en tu cuenta/serverless.
+        return _local_fallback(topic, prompt, expected, unit)
+
     except Exception:
-        return "[IA] Ocurrió un error inesperado al llamar a la IA. Intenta más tarde."
+        # Cualquier otra cosa rara: también fallback local.
+        return _local_fallback(topic, prompt, expected, unit)
