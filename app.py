@@ -525,28 +525,56 @@ tabs = st.tabs(
 #  TAB 0: INICIO
 # =========================================================
 
+# =========================================================
+#  TAB 0: INICIO
+# =========================================================
+
 with tabs[0]:
     st.subheader("Bienvenido 👋")
     st.write(
-        "Bienvenido a **Smart Form**.\n\n"
-        "• Usa las pestañas superiores para navegar entre materias.\n"
-        "• La configuración de tolerancia y número de preguntas del modo **PRUEBATE** "
-        "se encuentra dentro de la pestaña correspondiente.\n"
-        "• Si la IA está activa, verás botones para pedir explicaciones adicionales."
+        "Esta es la vista general de **Smart Form**. "
+        "Aquí ves tu configuración y el estado de la IA antes de entrar a cada materia."
     )
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.subheader("Configuración actual")
-        st.metric("Tolerancia", f"{st.session_state.tol_pct * 100:.1f} %")
-        st.metric("Preguntas PRUEBATE", st.session_state.pruebate_q)
-    with c2:
-        st.subheader("Estado de IA")
-        if has_ai():
-            st.success("IA activada. Si un modelo externo falla, se usa explicación local.")
-        else:
-            st.info("IA sin conexión externa. Solo explicaciones locales.")
 
+    tol_pct = st.session_state.tol_pct * 100.0
+    q = st.session_state.pruebate_q
+
+    if has_ai():
+        ai_text = "IA activada. Si un modelo externo falla, se usa explicación local."
+    else:
+        ai_text = "IA local: por ahora solo se usan explicaciones sin modelo externo."
+
+    st.markdown(
+        f"""
+        <div class="sf-grid">
+          <div class="sf-card">
+            <div class="sf-card-title">Configuración actual</div>
+            <div class="sf-card-body">
+              <div class="sf-card-row">
+                <span class="sf-card-label">Tolerancia</span>
+                <span class="sf-card-value">{tol_pct:.1f}%</span>
+              </div>
+              <div class="sf-card-row">
+                <span class="sf-card-label">Preguntas PRUEBATE</span>
+                <span class="sf-card-value">{q}</span>
+              </div>
+            </div>
+          </div>
+          <div class="sf-card sf-card-ai">
+            <div class="sf-card-title">Estado de IA</div>
+            <p class="sf-card-ai-text">{ai_text}</p>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+    st.write(
+        "Usa las pestañas de arriba para entrar a **Matemáticas, Física y Química**, "
+        "y el modo **PRUEBATE** para un examen mixto. "
+        "Cada intento se guarda en el historial para que puedas ver tu progreso."
+    )
 
 # =========================================================
 #  TAB 1: MATEMÁTICAS
