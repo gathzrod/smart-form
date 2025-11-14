@@ -14,11 +14,18 @@ from core.utils import (
     clear_history,
     Topic,
 )
+from core.topics_phys import PHYS_TOPICS
+from core.topics_chem import CHM_TOPICS
+from core.ai import ask_ai, has_ai
 
-# Intentamos importar la lista de temas de Matemáticas
+
+# =========================================================
+#  FALLBACK DE MATEMÁTICAS (por si el módulo importado está incompleto)
+# =========================================================
+
 try:
     from core.topics_math import MATH_TOPICS as IMPORTED_MATH_TOPICS
-except Exception:  # si falla el import, usamos []
+except Exception:
     IMPORTED_MATH_TOPICS = []
 
 
@@ -191,23 +198,22 @@ def default_math_topics() -> list[Topic]:
     ]
 
 
-# Usamos lo importado SI tiene más de 1 tema; si no, usamos el fallback.
 if IMPORTED_MATH_TOPICS and len(IMPORTED_MATH_TOPICS) > 1:
     MATH_TOPICS = list(IMPORTED_MATH_TOPICS)
 else:
     MATH_TOPICS = default_math_topics()
 
-# Fís / Quím importan igual que antes
-from core.topics_phys import PHYS_TOPICS
-from core.topics_chem import CHM_TOPICS
-from core.ai import ask_ai, has_ai
 
+# =========================================================
+#  INICIALIZACIÓN DE ESTADO + ESTILOS
+# =========================================================
 
 def init_state() -> None:
     if "tol_pct" not in st.session_state:
-        st.session_state.tol_pct = 0.05
+        st.session_state.tol_pct = 0.05  # 5 %
     if "pruebate_q" not in st.session_state:
         st.session_state.pruebate_q = 8
+
     if "pruebate_active" not in st.session_state:
         st.session_state.pruebate_active = False
     if "pruebate_questions" not in st.session_state:
@@ -224,19 +230,196 @@ def inject_global_css() -> None:
     st.markdown(
         """
         <style>
-        .main > div { max-width: 1100px; margin: 0 auto; }
-        .stTabs [data-baseweb="tab-list"] { gap: 0.5rem; }
-        .stTabs [data-baseweb="tab"] {
-            padding: 0.4rem 1.1rem;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        /* --------- Fuente + layout base --------- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        html, body, [class*="css"] {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         }
-        .stMetric, .stAlert { border-radius: 12px !important; }
-        .stButton button { border-radius: 999px; }
-        .streamlit-expanderHeader { font-weight: 600; }
+
+        body {
+            background:
+                radial-gradient(circle at 0% 0%, #1d2357 0, #020617 40%, #020617 100%);
+        }
+
+        .main .block-container {
+            max-width: 1200px;
+            padding-top: 2.5rem;
+            padding-bottom: 3rem;
+        }
+
+        /* --------- Hero principal --------- */
+        .sf-hero {
+            padding: 1.75rem 1.9rem;
+            border-radius: 20px;
+            background: linear-gradient(125deg,
+                        rgba(59,130,246,0.22),
+                        rgba(236,72,153,0.18),
+                        rgba(34,197,94,0.16));
+            border: 1px solid rgba(148,163,184,0.45);
+            box-shadow: 0 20px 48px rgba(15,23,42,0.85);
+            margin-bottom: 1.6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sf-hero::after {
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background: radial-gradient(circle at 0 0,
+                        rgba(248,250,252,0.18),
+                        transparent 55%);
+            opacity: 0.7;
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .sf-hero-title {
+            position: relative;
+            font-size: 2.1rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            background: linear-gradient(90deg,#f9fafb,#a5b4fc,#f472b6,#facc15);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .sf-hero-subtitle {
+            position: relative;
+            margin-top: 0.35rem;
+            font-size: 0.96rem;
+            color: #e5e7eb;
+            opacity: 0.92;
+        }
+
+        .sf-hero-badge {
+            position: relative;
+            margin-top: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.22rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(94,234,212,0.9);
+            background: rgba(15,118,110,0.35);
+            color: #ccfbf1;
+            font-size: 0.78rem;
+        }
+
+        /* --------- Sidebar --------- */
+        section[data-testid="stSidebar"] {
+            background: linear-gradient(180deg,#020617,#020617);
+            border-right: 1px solid rgba(148,163,184,0.45);
+        }
+
+        section[data-testid="stSidebar"] .stButton button {
+            width: 100%;
+        }
+
+        /* --------- Tabs --------- */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.75rem;
+            padding-bottom: 0.3rem;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.45rem 1.2rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.35);
+            background: rgba(15,23,42,0.88);
+            color: #e5e7eb;
+            transition: all 0.18s ease-out;
+        }
+
+        .stTabs [data-baseweb="tab"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 26px rgba(15,23,42,0.9);
+            border-color: rgba(129,140,248,0.9);
+        }
+
+        /* --------- Botones (animación click / hover) --------- */
+        .stButton button {
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.55);
+            background: radial-gradient(circle at 0 0,#4f46e5,#1d4ed8);
+            color: #f9fafb;
+            font-weight: 500;
+            padding: 0.42rem 1.3rem;
+            transition:
+                transform 0.11s ease-out,
+                box-shadow 0.11s ease-out,
+                background 0.20s ease-out,
+                border-color 0.2s ease-out;
+            cursor: pointer;
+        }
+
+        .stButton button:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 12px 30px rgba(30,64,175,0.9);
+            background: radial-gradient(circle at 0 0,#6366f1,#2563eb);
+            border-color: rgba(191,219,254,0.85);
+        }
+
+        .stButton button:active {
+            transform: translateY(0) scale(0.97);
+            box-shadow: 0 4px 12px rgba(15,23,42,1);
+        }
+
+        /* --------- Inputs / sliders --------- */
+        input, textarea {
+            border-radius: 999px !important;
+        }
+
+        .stNumberInput input {
+            background: rgba(15,23,42,0.8);
+            border-radius: 999px !important;
+            border: 1px solid rgba(148,163,184,0.6);
+        }
+
+        .stNumberInput input:focus {
+            outline: none !important;
+            border-color: rgba(129,140,248,0.95) !important;
+            box-shadow: 0 0 0 1px rgba(129,140,248,0.9);
+        }
+
+        .stSlider > div > div > div > div {
+            background: linear-gradient(90deg,#4f46e5,#22c55e) !important;
+        }
+
+        /* --------- Expanders: efecto “tarjeta de cristal” --------- */
         .streamlit-expander {
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px !important;
+            border: 1px solid rgba(148,163,184,0.45) !important;
+            background: radial-gradient(circle at 0 0,
+                        rgba(15,23,42,0.98),
+                        rgba(15,23,42,0.9)) !important;
+            box-shadow: 0 18px 45px rgba(15,23,42,0.9);
+            margin-bottom: 1.0rem;
+        }
+
+        .streamlit-expanderHeader {
+            font-weight: 600 !important;
+        }
+
+        /* --------- Métricas y alerts como tarjetas --------- */
+        .stMetric, .stAlert {
+            border-radius: 16px !important;
+            background: rgba(15,23,42,0.96) !important;
+            border: 1px solid rgba(148,163,184,0.55) !important;
+        }
+
+        /* --------- Chip de estado IA (por si se usa en HTML) --------- */
+        .sf-chip {
+            display:inline-flex;
+            align-items:center;
+            gap:0.35rem;
+            padding:0.22rem 0.7rem;
+            border-radius:999px;
+            border:1px solid rgba(52,211,153,0.95);
+            background:rgba(22,101,52,0.4);
+            font-size:0.8rem;
+            color:#bbf7d0;
         }
         </style>
         """,
@@ -244,12 +427,19 @@ def inject_global_css() -> None:
     )
 
 
+# =========================================================
+#  CONFIG DE PÁGINA
+# =========================================================
+
 st.set_page_config(page_title="Smart Form", page_icon="🧪", layout="wide")
 
 init_state()
 inject_global_css()
 
-# ---------- SIDEBAR ----------
+# =========================================================
+#  SIDEBAR
+# =========================================================
+
 with st.sidebar:
     st.markdown("## 🧪 Smart Form")
     st.caption("Formulario interactivo para Matemáticas, Física y Química.")
@@ -263,8 +453,26 @@ with st.sidebar:
         clear_history()
         st.success("Historial borrado en esta sesión.")
 
-# ---------- CONTENIDO ----------
-st.title("Smart Form — panel principal")
+
+# =========================================================
+#  HERO + TABS
+# =========================================================
+
+st.markdown(
+    """
+    <div class="sf-hero">
+      <div class="sf-hero-title">Smart Form</div>
+      <div class="sf-hero-subtitle">
+        Practica Matemáticas, Física y Química con ejercicios interactivos,
+        pistas y modo PRUEBATE.
+      </div>
+      <div class="sf-hero-badge">
+        🚀 Modo estudio + examen mixto
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 tabs = st.tabs(
     [
@@ -277,7 +485,10 @@ tabs = st.tabs(
     ]
 )
 
-# ====== INICIO ======
+# =========================================================
+#  TAB 0: INICIO
+# =========================================================
+
 with tabs[0]:
     st.subheader("Bienvenido 👋")
     st.write(
@@ -300,7 +511,11 @@ with tabs[0]:
         else:
             st.info("IA sin conexión externa. Solo explicaciones locales.")
 
-# ====== MATEMÁTICAS ======
+
+# =========================================================
+#  TAB 1: MATEMÁTICAS
+# =========================================================
+
 with tabs[1]:
     st.markdown("## 🧮 Matemáticas")
 
@@ -370,9 +585,10 @@ with tabs[1]:
                 )
                 st.info(txt)
 
-# ====== FÍSICA ======
-from core.topics_phys import PHYS_TOPICS  # ya importado arriba, pero mantenemos
 
+# =========================================================
+#  TAB 2: FÍSICA
+# =========================================================
 
 with tabs[2]:
     st.markdown("## 🧲 Física")
@@ -443,9 +659,10 @@ with tabs[2]:
                 )
                 st.info(txt)
 
-# ====== QUÍMICA ======
-from core.topics_chem import CHM_TOPICS  # ya importado arriba, pero mantenemos
 
+# =========================================================
+#  TAB 3: QUÍMICA
+# =========================================================
 
 with tabs[3]:
     st.markdown("## ⚗️ Química")
@@ -516,7 +733,11 @@ with tabs[3]:
                 )
                 st.info(txt)
 
-# ====== PRUEBATE ======
+
+# =========================================================
+#  TAB 4: PRUEBATE
+# =========================================================
+
 with tabs[4]:
     st.subheader("🎯 PRUEBATE (mixto)")
 
@@ -670,7 +891,11 @@ with tabs[4]:
             st.session_state.pruebate_active = False
             st.rerun()
 
-# ====== HISTORIAL ======
+
+# =========================================================
+#  TAB 5: HISTORIAL
+# =========================================================
+
 with tabs[5]:
     st.subheader("📜 Historial")
     df = get_history_df()
