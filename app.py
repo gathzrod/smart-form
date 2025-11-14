@@ -436,7 +436,7 @@ with tabs[4]:
         )
         if st.button("🚀 Iniciar PRUEBATE"):
             _start_pruebate()
-            st.experimental_rerun()
+            st.rerun()
 
     # ---- Si hay examen en curso ----
     if st.session_state.pruebate_active:
@@ -445,7 +445,6 @@ with tabs[4]:
         total = len(q_list)
 
         if idx >= total:
-            # Por seguridad, si algo se desfasara
             _finish_pruebate()
 
         else:
@@ -498,7 +497,7 @@ with tabs[4]:
                     if st.session_state.pruebate_idx >= total:
                         _finish_pruebate()
 
-                    st.experimental_rerun()
+                    st.rerun()
 
             with col_b:
                 st.info(
@@ -519,7 +518,6 @@ with tabs[4]:
 
         if st.session_state.pruebate_misses:
             st.markdown("**Temas a reforzar:**")
-            # Contar por (area, tema)
             counts = {}
             for m in st.session_state.pruebate_misses:
                 key = (m["area"], m["tema"])
@@ -531,13 +529,12 @@ with tabs[4]:
 
         st.markdown("---")
         if st.button("🔁 Hacer otro PRUEBATE"):
-            # Reset completo para nuevo examen
             st.session_state.pruebate_idx = 0
             st.session_state.pruebate_correct = 0
             st.session_state.pruebate_questions = []
             st.session_state.pruebate_misses = []
             st.session_state.pruebate_active = False
-            st.experimental_rerun()
+            st.rerun()
 
 # ====== TAB HISTORIAL ======
 with tabs[5]:
