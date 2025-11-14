@@ -11,6 +11,7 @@ from core.utils import (
     clear_history,
 )
 from core.topics_math import MATH_TOPICS
+from core.topics_phys import PHYS_TOPICS
 from core.ai import ask_ai, has_ai
 
 
@@ -27,13 +28,10 @@ def inject_global_css() -> None:
     st.markdown(
         """
         <style>
-        /* Centrar contenido principal y darle aire */
         .main > div {
             max-width: 1100px;
             margin: 0 auto;
         }
-
-        /* Tabs más redondas y separadas */
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.5rem;
         }
@@ -42,18 +40,12 @@ def inject_global_css() -> None:
             border-radius: 999px;
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-
-        /* Cards suaves para métricas y alertas */
         .stMetric, .stAlert {
             border-radius: 12px !important;
         }
-
-        /* Botones un poco más redondos */
         .stButton button {
             border-radius: 999px;
         }
-
-        /* Expander con borde suave */
         .streamlit-expanderHeader {
             font-weight: 600;
         }
@@ -130,7 +122,7 @@ with tabs[0]:
         st.subheader("Estado de IA")
         if has_ai():
             st.success(
-                "IA activada (se intentará usar HuggingFace; si falla, se usa explicación local)."
+                "IA activada (se intentará usar modelos externos; si fallan, se usa explicación local)."
             )
         else:
             st.info(
@@ -148,24 +140,14 @@ with tabs[1]:
 
     with st.expander("📘 Explicación del tema", expanded=True):
         st.write(topic.explain())
-        if has_ai():
-            if st.button("Pedir explicación IA del tema", key="math_ai_topic"):
-                txt = ask_ai(
-                    topic=f"Matemáticas: {topic.name}",
-                    prompt=topic.explain(),
-                    expected=None,
-                    unit="",
-                )
-                st.info(txt)
-        else:
-            if st.button("Pedir explicación (modo local)", key="math_ai_topic_local"):
-                txt = ask_ai(
-                    topic=f"Matemáticas: {topic.name}",
-                    prompt=topic.explain(),
-                    expected=None,
-                    unit="",
-                )
-                st.info(txt)
+        if st.button("Pedir explicación IA del tema", key="math_ai_topic"):
+            txt = ask_ai(
+                topic=f"Matemáticas: {topic.name}",
+                prompt=topic.explain(),
+                expected=None,
+                unit="",
+            )
+            st.info(txt)
 
     with st.expander("🧪 Ejemplo resuelto", expanded=False):
         enun_ex, sol_ex = topic.example()
@@ -221,16 +203,74 @@ with tabs[1]:
 
 # ----- Tab FÍSICA -----
 with tabs[2]:
-    st.subheader("🧲 Física")
-    st.write(
-        "Aquí irán los módulos de Física:\n"
-        "- Velocidad media\n"
-        "- Energía cinética\n"
-        "- Ley de Ohm\n"
-        "- MRU / MRUA\n\n"
-        "Cada tema tendrá su explicación, ejemplo y ejercicio interactivo "
-        "con la misma interfaz que Matemáticas."
-    )
+    st.markdown("## 🧲 Física")
+
+    phys_names = [t.name for t in PHYS_TOPICS]
+    sel_phys_name = st.selectbox("Selecciona un tema de Física", phys_names)
+    phys_topic = PHYS_TOPICS[phys_names.index(sel_phys_name)]
+
+    with st.expander("📘 Explicación del tema", expanded=True):
+        st.write(phys_topic.explain())
+        if st.button("Pedir explicación IA del tema (Física)", key="phys_ai_topic"):
+            txt = ask_ai(
+                topic=f"Física: {phys_topic.name}",
+                prompt=phys_topic.explain(),
+                expected=None,
+                unit="",
+            )
+            st.info(txt)
+
+    with st.expander("🧪 Ejemplo resuelto", expanded=False):
+        enun_ex, sol_ex = phys_topic.example()
+        st.write(enun_ex)
+        if st.button("Mostrar solución del ejemplo (Física)", key="phys_show_example"):
+            st.success(sol_ex)
+
+    with st.expander("📝 Ejercicio interactivo", expanded=False):
+        enun_exe, expected, unit, hint = phys_topic.exercise()
+        st.write(enun_exe)
+
+        user = st.number_input(
+            "Tu respuesta (Física)",
+            value=0.0,
+            step=0.1,
+            format="%.6f",
+            key="phys_answer",
+        )
+
+        col_btn1, col_btn2 = st.columns(2)
+
+        with col_btn1:
+            if st.button("Corregir (Física)", key="phys_check"):
+                ok = within_tol(expected, float(user), st.session_state.tol_pct)
+                add_history(
+                    area="Física",
+                    tema=phys_topic.name,
+                    tipo="Ejercicio",
+                    correcto=expected,
+                    usuario=float(user),
+                    acierto=ok,
+                )
+                if ok:
+                    st.success(f"CORRECTO ✅ — Solución: {expected:.6f} {unit}")
+                else:
+                    st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
+                    st.caption("Pista: " + hint)
+
+        with col_btn2:
+            if st.button("Pedir explicación IA de este ejercicio (Física)", key="phys_ai_exercise"):
+                prompt_ai = (
+                    f"{enun_exe}\n"
+                    f"La respuesta del alumno fue: {float(user):.6f} {unit} "
+                    f"(el sistema conoce un valor de referencia para revisar)."
+                )
+                txt = ask_ai(
+                    topic=f"Física: {phys_topic.name}",
+                    prompt=prompt_ai,
+                    expected=expected,
+                    unit=unit,
+                )
+                st.info(txt)
 
 # ----- Tab QUÍMICA -----
 with tabs[3]:
@@ -238,9 +278,9 @@ with tabs[3]:
     st.write(
         "Aquí irán los módulos de Química:\n"
         "- Molaridad\n"
+        "- Masa ↔ moles\n"
         "- Densidad\n"
-        "- Dilución\n"
-        "- Gas ideal\n\n"
+        "- Dilución\n\n"
         "También se integrará con el historial y, opcionalmente, con pistas IA."
     )
 
@@ -284,7 +324,7 @@ with tabs[5]:
     st.subheader("📜 Historial")
     df = get_history_df()
     if df.empty:
-        st.info("Todavía no hay registros. Resuelve algunos ejercicios en Matemáticas primero.")
+        st.info("Todavía no hay registros. Resuelve algunos ejercicios en Matemáticas o Física primero.")
     else:
         st.write("Historial de intentos:")
         st.dataframe(df, use_container_width=True, height=400)
