@@ -1,7 +1,7 @@
-# ============================
 # path: app.py
-# ============================
 from __future__ import annotations
+
+import random
 
 import streamlit as st
 
@@ -24,6 +24,18 @@ def init_state() -> None:
         st.session_state.tol_pct = 0.05  # 5%
     if "pruebate_q" not in st.session_state:
         st.session_state.pruebate_q = 8
+
+    # Estado interno del modo PRUEBATE
+    if "pruebate_active" not in st.session_state:
+        st.session_state.pruebate_active = False
+    if "pruebate_questions" not in st.session_state:
+        st.session_state.pruebate_questions = []
+    if "pruebate_idx" not in st.session_state:
+        st.session_state.pruebate_idx = 0
+    if "pruebate_correct" not in st.session_state:
+        st.session_state.pruebate_correct = 0
+    if "pruebate_misses" not in st.session_state:
+        st.session_state.pruebate_misses = []  # lista de dicts con area/tema
 
 
 def inject_global_css() -> None:
@@ -102,7 +114,7 @@ tabs = st.tabs(
     ]
 )
 
-# ----- Tab INICIO -----
+# ====== TAB INICIO ======
 with tabs[0]:
     st.subheader("Bienvenido 👋")
     st.write(
@@ -129,11 +141,10 @@ with tabs[0]:
             )
         else:
             st.info(
-                "IA sin conexión a modelos externos. Se usan solo explicaciones locales "
-                "basadas en el enunciado y la teoría."
+                "IA sin conexión a modelos externos. Se usan solo explicaciones locales."
             )
 
-# ----- Tab MATEMÁTICAS -----
+# ====== TAB MATEMÁTICAS ======
 with tabs[1]:
     st.markdown("## 🧮 Matemáticas")
 
@@ -190,7 +201,10 @@ with tabs[1]:
                     st.caption("Pista: " + hint)
 
         with col_btn2:
-            if st.button("Pedir explicación IA de este ejercicio (Matemáticas)", key="math_ai_exercise"):
+            if st.button(
+                "Pedir explicación IA de este ejercicio (Matemáticas)",
+                key="math_ai_exercise",
+            ):
                 prompt_ai = (
                     f"{enun_exe}\n"
                     f"La respuesta del alumno fue: {float(user):.6f} {unit} "
@@ -204,7 +218,7 @@ with tabs[1]:
                 )
                 st.info(txt)
 
-# ----- Tab FÍSICA -----
+# ====== TAB FÍSICA ======
 with tabs[2]:
     st.markdown("## 🧲 Física")
 
@@ -261,7 +275,10 @@ with tabs[2]:
                     st.caption("Pista: " + hint)
 
         with col_btn2:
-            if st.button("Pedir explicación IA de este ejercicio (Física)", key="phys_ai_exercise"):
+            if st.button(
+                "Pedir explicación IA de este ejercicio (Física)",
+                key="phys_ai_exercise",
+            ):
                 prompt_ai = (
                     f"{enun_exe}\n"
                     f"La respuesta del alumno fue: {float(user):.6f} {unit} "
@@ -275,7 +292,7 @@ with tabs[2]:
                 )
                 st.info(txt)
 
-# ----- Tab QUÍMICA -----
+# ====== TAB QUÍMICA ======
 with tabs[3]:
     st.markdown("## ⚗️ Química")
 
@@ -332,7 +349,10 @@ with tabs[3]:
                     st.caption("Pista: " + hint)
 
         with col_btn2:
-            if st.button("Pedir explicación IA de este ejercicio (Química)", key="chem_ai_exercise"):
+            if st.button(
+                "Pedir explicación IA de este ejercicio (Química)",
+                key="chem_ai_exercise",
+            ):
                 prompt_ai = (
                     f"{enun_exe}\n"
                     f"La respuesta del alumno fue: {float(user):.6f} {unit} "
@@ -346,11 +366,12 @@ with tabs[3]:
                 )
                 st.info(txt)
 
-# ----- Tab PRUEBATE -----
+# ====== TAB PRUEBATE ======
 with tabs[4]:
     st.subheader("🎯 PRUEBATE (mixto)")
 
-    with st.expander("⚙ Configuración de PRUEBATE y tolerancia", expanded=True):
+    # ---- Configuración básica (tolerancia + nº de preguntas) ----
+    with st.expander("⚙ Configuración de PRUEBATE y tolerancia", expanded=not st.session_state.pruebate_active):
         tol_pct_ui = st.slider(
             "Tolerancia (%)",
             min_value=0.1,
@@ -375,18 +396,158 @@ with tabs[4]:
         )
 
     st.markdown("---")
-    st.write(
-        "En esta versión, PRUEBATE aún no está implementado. "
-        "Más adelante aquí se generarán preguntas aleatorias de Matemáticas, Física y Química, "
-        "se calculará tu calificación y se guardará en el historial."
-    )
 
-# ----- Tab HISTORIAL -----
+    # ---- Funciones auxiliares internas para PRUEBATE ----
+    def _start_pruebate() -> None:
+        """Genera la lista de preguntas y reinicia contadores."""
+        all_topics = list(MATH_TOPICS) + list(PHYS_TOPICS) + list(CHM_TOPICS)
+        total_q = st.session_state.pruebate_q
+
+        questions = []
+        for _ in range(total_q):
+            topic = random.choice(all_topics)
+            enun, expected, unit, hint = topic.exercise()
+            questions.append(
+                {
+                    "area": topic.area,
+                    "tema": topic.name,
+                    "enunciado": enun,
+                    "correcto": expected,
+                    "unit": unit,
+                    "hint": hint,
+                }
+            )
+
+        st.session_state.pruebate_questions = questions
+        st.session_state.pruebate_idx = 0
+        st.session_state.pruebate_correct = 0
+        st.session_state.pruebate_misses = []
+        st.session_state.pruebate_active = True
+
+    def _finish_pruebate() -> None:
+        """Marca PRUEBATE como finalizado (se usa para mostrar resumen)."""
+        st.session_state.pruebate_active = False
+
+    # ---- Si NO hay examen en curso: botón para iniciar ----
+    if not st.session_state.pruebate_active and st.session_state.pruebate_idx == 0:
+        st.write(
+            "PRUEBATE generará preguntas aleatorias de **Matemáticas, Física y Química**.\n"
+            "Se califican con la tolerancia indicada y cada respuesta queda guardada en el historial."
+        )
+        if st.button("🚀 Iniciar PRUEBATE"):
+            _start_pruebate()
+            st.experimental_rerun()
+
+    # ---- Si hay examen en curso ----
+    if st.session_state.pruebate_active:
+        q_list = st.session_state.pruebate_questions
+        idx = st.session_state.pruebate_idx
+        total = len(q_list)
+
+        if idx >= total:
+            # Por seguridad, si algo se desfasara
+            _finish_pruebate()
+
+        else:
+            q = q_list[idx]
+            st.markdown(f"**Pregunta {idx + 1} de {total}**")
+            st.caption(f"{q['area']} · {q['tema']}")
+            st.write(q["enunciado"])
+
+            user_key = f"pruebate_answer_{idx}"
+            user_answer = st.number_input(
+                "Tu respuesta",
+                value=0.0,
+                step=0.1,
+                format="%.6f",
+                key=user_key,
+            )
+
+            col_a, col_b = st.columns(2)
+
+            with col_a:
+                btn_label = "Corregir y siguiente" if idx < total - 1 else "Corregir y ver resultado final"
+                if st.button(btn_label, key=f"pruebate_check_{idx}"):
+                    correcto_val = float(q["correcto"])
+                    ok = within_tol(correcto_val, float(user_answer), st.session_state.tol_pct)
+
+                    # Guardar en historial
+                    add_history(
+                        area=q["area"],
+                        tema=q["tema"],
+                        tipo="PRUEBATE",
+                        correcto=correcto_val,
+                        usuario=float(user_answer),
+                        acierto=ok,
+                    )
+
+                    if ok:
+                        st.success(f"CORRECTO ✅ — Solución: {correcto_val:.6f} {q['unit']}")
+                        st.session_state.pruebate_correct += 1
+                    else:
+                        st.error(f"INCORRECTO ❌ — Solución: {correcto_val:.6f} {q['unit']}")
+                        st.caption("Pista: " + q["hint"])
+                        st.session_state.pruebate_misses.append(
+                            {"area": q["area"], "tema": q["tema"]}
+                        )
+
+                    # Pasar a la siguiente pregunta
+                    st.session_state.pruebate_idx += 1
+
+                    # Si ya terminamos, marcar como finalizado
+                    if st.session_state.pruebate_idx >= total:
+                        _finish_pruebate()
+
+                    st.experimental_rerun()
+
+            with col_b:
+                st.info(
+                    "Responde con calma. Al final verás un resumen con tu calificación "
+                    "y los temas que necesitas reforzar."
+                )
+
+    # ---- Si el examen ya terminó y hay resultados ----
+    if not st.session_state.pruebate_active and st.session_state.pruebate_idx > 0:
+        total = len(st.session_state.pruebate_questions)
+        correct = st.session_state.pruebate_correct
+        score = 100.0 * correct / total if total > 0 else 0.0
+
+        st.success(
+            f"PRUEBATE terminado. Aciertos: {correct}/{total} — "
+            f"Calificación: {score:.1f}/100"
+        )
+
+        if st.session_state.pruebate_misses:
+            st.markdown("**Temas a reforzar:**")
+            # Contar por (area, tema)
+            counts = {}
+            for m in st.session_state.pruebate_misses:
+                key = (m["area"], m["tema"])
+                counts[key] = counts.get(key, 0) + 1
+            for (area, tema), c in counts.items():
+                st.write(f"- {area} · {tema} (errores: {c})")
+        else:
+            st.write("¡Excelente! No tuviste errores en este PRUEBATE. 🎉")
+
+        st.markdown("---")
+        if st.button("🔁 Hacer otro PRUEBATE"):
+            # Reset completo para nuevo examen
+            st.session_state.pruebate_idx = 0
+            st.session_state.pruebate_correct = 0
+            st.session_state.pruebate_questions = []
+            st.session_state.pruebate_misses = []
+            st.session_state.pruebate_active = False
+            st.experimental_rerun()
+
+# ====== TAB HISTORIAL ======
 with tabs[5]:
     st.subheader("📜 Historial")
     df = get_history_df()
     if df.empty:
-        st.info("Todavía no hay registros. Resuelve algunos ejercicios en las materias primero.")
+        st.info(
+            "Todavía no hay registros. Resuelve algunos ejercicios en las materias "
+            "o realiza un PRUEBATE."
+        )
     else:
         st.write("Historial de intentos:")
         st.dataframe(df, use_container_width=True, height=400)
