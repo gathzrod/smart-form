@@ -248,7 +248,7 @@ def inject_global_css() -> None:
             padding-bottom: 3rem;
         }
 
-        /* --------- Hero principal --------- */
+        /* --------- Hero principal con degradado animado --------- */
         .sf-hero {
             padding: 1.75rem 1.9rem;
             border-radius: 20px;
@@ -256,11 +256,19 @@ def inject_global_css() -> None:
                         rgba(59,130,246,0.22),
                         rgba(236,72,153,0.18),
                         rgba(34,197,94,0.16));
+            background-size: 240% 240%;
+            animation: sfGradientMove 22s ease-in-out infinite;
             border: 1px solid rgba(148,163,184,0.45);
             box-shadow: 0 20px 48px rgba(15,23,42,0.85);
-            margin-bottom: 1.6rem;
+            margin-bottom: 1.4rem;
             position: relative;
             overflow: hidden;
+        }
+
+        @keyframes sfGradientMove {
+            0%   { background-position: 0%   50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0%   50%; }
         }
 
         .sf-hero::after {
@@ -305,6 +313,7 @@ def inject_global_css() -> None:
             background: rgba(15,118,110,0.35);
             color: #ccfbf1;
             font-size: 0.78rem;
+            box-shadow: 0 0 0 1px rgba(15,23,42,0.6);
         }
 
         /* --------- Sidebar --------- */
@@ -321,21 +330,48 @@ def inject_global_css() -> None:
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.75rem;
             padding-bottom: 0.3rem;
+            margin-top: 0.35rem; /* un poco de aire respecto al hero */
         }
 
         .stTabs [data-baseweb="tab"] {
             padding: 0.45rem 1.2rem;
             border-radius: 999px;
             border: 1px solid rgba(148,163,184,0.35);
-            background: rgba(15,23,42,0.88);
+            background: radial-gradient(circle at 0 0, #020617, #020617);
             color: #e5e7eb;
-            transition: all 0.18s ease-out;
+            transition:
+                transform 0.16s ease-out,
+                box-shadow 0.16s ease-out,
+                border-color 0.18s ease-out,
+                background 0.18s ease-out;
+            position: relative;
+            overflow: visible;
         }
 
-        .stTabs [data-baseweb="tab"]:hover {
-            transform: translateY(-1px);
+        /* Tab activo */
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            border-color: rgba(129,140,248,0.95);
+            background: radial-gradient(circle at 0 0,#4338ca,#1d4ed8);
             box-shadow: 0 10px 26px rgba(15,23,42,0.9);
-            border-color: rgba(129,140,248,0.9);
+        }
+
+        /* Hover: SOLO escala, sin mover hacia arriba (arregla el recorte) */
+        .stTabs [data-baseweb="tab"]:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 30px rgba(15,23,42,0.95);
+            border-color: rgba(191,219,254,0.85);
+        }
+
+        /* Pequeña “glow line” debajo de la barra de tabs */
+        .stTabs [data-baseweb="tab-list"]::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -0.28rem;
+            height: 2px;
+            background: linear-gradient(90deg,#22c55e,#6366f1,#f97316);
+            opacity: 0.55;
         }
 
         /* --------- Botones (animación click / hover) --------- */
@@ -355,14 +391,14 @@ def inject_global_css() -> None:
         }
 
         .stButton button:hover {
-            transform: translateY(-1px) scale(1.01);
+            transform: scale(1.02);
             box-shadow: 0 12px 30px rgba(30,64,175,0.9);
             background: radial-gradient(circle at 0 0,#6366f1,#2563eb);
             border-color: rgba(191,219,254,0.85);
         }
 
         .stButton button:active {
-            transform: translateY(0) scale(0.97);
+            transform: scale(0.97);
             box-shadow: 0 4px 12px rgba(15,23,42,1);
         }
 
@@ -372,7 +408,7 @@ def inject_global_css() -> None:
         }
 
         .stNumberInput input {
-            background: rgba(15,23,42,0.8);
+            background: rgba(15,23,42,0.9);
             border-radius: 999px !important;
             border: 1px solid rgba(148,163,184,0.6);
         }
@@ -387,7 +423,7 @@ def inject_global_css() -> None:
             background: linear-gradient(90deg,#4f46e5,#22c55e) !important;
         }
 
-        /* --------- Expanders: efecto “tarjeta de cristal” --------- */
+        /* --------- Expanders: tarjetas de cristal --------- */
         .streamlit-expander {
             border-radius: 18px !important;
             border: 1px solid rgba(148,163,184,0.45) !important;
