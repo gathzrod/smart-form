@@ -1,4 +1,6 @@
+# ============================
 # path: app.py
+# ============================
 from __future__ import annotations
 
 import streamlit as st
@@ -12,6 +14,7 @@ from core.utils import (
 )
 from core.topics_math import MATH_TOPICS
 from core.topics_phys import PHYS_TOPICS
+from core.topics_chem import CHM_TOPICS
 from core.ai import ask_ai, has_ai
 
 
@@ -76,9 +79,9 @@ with st.sidebar:
 
     st.markdown("---")
     if has_ai():
-        st.success("IA: activada (modo mixto local / HuggingFace).")
+        st.success("IA: activada (modo mixto local / modelos externos).")
     else:
-        st.info("IA: solo modo local (sin HuggingFace).")
+        st.info("IA: solo modo local (sin modelos externos).")
 
     st.markdown("---")
     if st.button("🧹 Borrar historial"):
@@ -122,7 +125,7 @@ with tabs[0]:
         st.subheader("Estado de IA")
         if has_ai():
             st.success(
-                "IA activada (se intentará usar modelos externos; si fallan, se usa explicación local)."
+                "IA activada (si un modelo externo falla, se usa explicación local)."
             )
         else:
             st.info(
@@ -160,7 +163,7 @@ with tabs[1]:
         st.write(enun_exe)
 
         user = st.number_input(
-            "Tu respuesta",
+            "Tu respuesta (Matemáticas)",
             value=0.0,
             step=0.1,
             format="%.6f",
@@ -170,7 +173,7 @@ with tabs[1]:
         col_btn1, col_btn2 = st.columns(2)
 
         with col_btn1:
-            if st.button("Corregir", key="math_check"):
+            if st.button("Corregir (Matemáticas)", key="math_check"):
                 ok = within_tol(expected, float(user), st.session_state.tol_pct)
                 add_history(
                     area="Matemáticas",
@@ -187,7 +190,7 @@ with tabs[1]:
                     st.caption("Pista: " + hint)
 
         with col_btn2:
-            if st.button("Pedir explicación IA de este ejercicio", key="math_ai_exercise"):
+            if st.button("Pedir explicación IA de este ejercicio (Matemáticas)", key="math_ai_exercise"):
                 prompt_ai = (
                     f"{enun_exe}\n"
                     f"La respuesta del alumno fue: {float(user):.6f} {unit} "
@@ -274,15 +277,74 @@ with tabs[2]:
 
 # ----- Tab QUÍMICA -----
 with tabs[3]:
-    st.subheader("⚗️ Química")
-    st.write(
-        "Aquí irán los módulos de Química:\n"
-        "- Molaridad\n"
-        "- Masa ↔ moles\n"
-        "- Densidad\n"
-        "- Dilución\n\n"
-        "También se integrará con el historial y, opcionalmente, con pistas IA."
-    )
+    st.markdown("## ⚗️ Química")
+
+    chem_names = [t.name for t in CHM_TOPICS]
+    sel_chem_name = st.selectbox("Selecciona un tema de Química", chem_names)
+    chem_topic = CHM_TOPICS[chem_names.index(sel_chem_name)]
+
+    with st.expander("📘 Explicación del tema", expanded=True):
+        st.write(chem_topic.explain())
+        if st.button("Pedir explicación IA del tema (Química)", key="chem_ai_topic"):
+            txt = ask_ai(
+                topic=f"Química: {chem_topic.name}",
+                prompt=chem_topic.explain(),
+                expected=None,
+                unit="",
+            )
+            st.info(txt)
+
+    with st.expander("🧪 Ejemplo resuelto", expanded=False):
+        enun_ex, sol_ex = chem_topic.example()
+        st.write(enun_ex)
+        if st.button("Mostrar solución del ejemplo (Química)", key="chem_show_example"):
+            st.success(sol_ex)
+
+    with st.expander("📝 Ejercicio interactivo", expanded=False):
+        enun_exe, expected, unit, hint = chem_topic.exercise()
+        st.write(enun_exe)
+
+        user = st.number_input(
+            "Tu respuesta (Química)",
+            value=0.0,
+            step=0.1,
+            format="%.6f",
+            key="chem_answer",
+        )
+
+        col_btn1, col_btn2 = st.columns(2)
+
+        with col_btn1:
+            if st.button("Corregir (Química)", key="chem_check"):
+                ok = within_tol(expected, float(user), st.session_state.tol_pct)
+                add_history(
+                    area="Química",
+                    tema=chem_topic.name,
+                    tipo="Ejercicio",
+                    correcto=expected,
+                    usuario=float(user),
+                    acierto=ok,
+                )
+                if ok:
+                    st.success(f"CORRECTO ✅ — Solución: {expected:.6f} {unit}")
+                else:
+                    st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
+                    st.caption("Pista: " + hint)
+
+        with col_btn2:
+            if st.button("Pedir explicación IA de este ejercicio (Química)", key="chem_ai_exercise"):
+                prompt_ai = (
+                    f"{enun_exe}\n"
+                    f"La respuesta del alumno fue: {float(user):.6f} {unit} "
+                    f"(el sistema conoce un valor de referencia para revisar)."
+                )
+                txt = ask_ai(
+                    topic=f"Química: {chem_topic.name}",
+                    prompt=prompt_ai,
+                    expected=expected,
+                    unit=unit,
+                )
+                st.info(txt)
 
 # ----- Tab PRUEBATE -----
 with tabs[4]:
@@ -324,7 +386,7 @@ with tabs[5]:
     st.subheader("📜 Historial")
     df = get_history_df()
     if df.empty:
-        st.info("Todavía no hay registros. Resuelve algunos ejercicios en Matemáticas o Física primero.")
+        st.info("Todavía no hay registros. Resuelve algunos ejercicios en las materias primero.")
     else:
         st.write("Historial de intentos:")
         st.dataframe(df, use_container_width=True, height=400)
