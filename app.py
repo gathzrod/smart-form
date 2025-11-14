@@ -330,7 +330,7 @@ def inject_global_css() -> None:
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.75rem;
             padding-bottom: 0.3rem;
-            margin-top: 0.35rem; /* un poco de aire respecto al hero */
+            margin-top: 0.35rem;
         }
 
         .stTabs [data-baseweb="tab"] {
@@ -355,14 +355,14 @@ def inject_global_css() -> None:
             box-shadow: 0 10px 26px rgba(15,23,42,0.9);
         }
 
-        /* Hover: SOLO escala, sin mover hacia arriba (arregla el recorte) */
+        /* Hover: solo escala (no se corta arriba) */
         .stTabs [data-baseweb="tab"]:hover {
             transform: scale(1.02);
             box-shadow: 0 12px 30px rgba(15,23,42,0.95);
             border-color: rgba(191,219,254,0.85);
         }
 
-        /* Pequeña “glow line” debajo de la barra de tabs */
+        /* Glow debajo de tabs */
         .stTabs [data-baseweb="tab-list"]::after {
             content: "";
             position: absolute;
@@ -374,7 +374,7 @@ def inject_global_css() -> None:
             opacity: 0.55;
         }
 
-        /* --------- Botones (animación click / hover) --------- */
+        /* --------- Botones --------- */
         .stButton button {
             border-radius: 999px;
             border: 1px solid rgba(148,163,184,0.55);
@@ -423,7 +423,7 @@ def inject_global_css() -> None:
             background: linear-gradient(90deg,#4f46e5,#22c55e) !important;
         }
 
-        /* --------- Expanders: tarjetas de cristal --------- */
+        /* --------- Expanders --------- */
         .streamlit-expander {
             border-radius: 18px !important;
             border: 1px solid rgba(148,163,184,0.45) !important;
@@ -438,14 +438,71 @@ def inject_global_css() -> None:
             font-weight: 600 !important;
         }
 
-        /* --------- Métricas y alerts como tarjetas --------- */
+        /* --------- Métricas / alerts (si se usan) --------- */
         .stMetric, .stAlert {
             border-radius: 16px !important;
             background: rgba(15,23,42,0.96) !important;
             border: 1px solid rgba(148,163,184,0.55) !important;
         }
 
-        /* --------- Chip de estado IA (por si se usa en HTML) --------- */
+        /* --------- Cards personalizadas (Inicio) --------- */
+        .sf-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .sf-card {
+            flex: 1 1 260px;
+            background: radial-gradient(circle at 0 0,
+                        rgba(15,23,42,0.98),
+                        rgba(15,23,42,0.96));
+            border-radius: 18px;
+            border: 1px solid rgba(148,163,184,0.55);
+            padding: 1rem 1.2rem;
+            box-shadow: 0 14px 36px rgba(15,23,42,0.9);
+        }
+
+        .sf-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: #e5e7eb;
+        }
+
+        .sf-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 0.4rem;
+        }
+
+        .sf-card-label {
+            font-size: 0.82rem;
+            color: #9ca3af;
+        }
+
+        .sf-card-value {
+            font-size: 1.7rem;
+            font-weight: 600;
+            color: #f9fafb;
+        }
+
+        .sf-card-ai {
+            background: linear-gradient(135deg,
+                        rgba(22,163,74,0.85),
+                        rgba(5,46,22,0.96));
+            border-color: rgba(74,222,128,0.85);
+        }
+
+        .sf-card-ai-text {
+            margin: 0.4rem 0 0;
+            font-size: 0.9rem;
+            color: #dcfce7;
+        }
+
+        /* --------- Chip IA genérico --------- */
         .sf-chip {
             display:inline-flex;
             align-items:center;
