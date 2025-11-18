@@ -1,22 +1,23 @@
 # path: app.py
 from __future__ import annotations
 
-import random
 import math
+import random
 
 import streamlit as st
 
 from core.utils import (
-    within_tol,
+    Topic,
     add_history,
+    clear_history,
     get_history_df,
     history_to_csv,
-    clear_history,
-    Topic,
+    within_tol,
 )
-from core.topics_phys import PHYS_TOPICS
 from core.topics_chem import CHM_TOPICS
+from core.topics_phys import PHYS_TOPICS
 from core.ai import ask_ai, has_ai
+import core.ui as ui
 
 
 # =========================================================
@@ -205,7 +206,7 @@ else:
 
 
 # =========================================================
-#  INICIALIZACIÓN DE ESTADO + ESTILOS
+#  INICIALIZACIÓN DE ESTADO
 # =========================================================
 
 def init_state() -> None:
@@ -226,346 +227,25 @@ def init_state() -> None:
         st.session_state.pruebate_misses = []
 
 
-def inject_global_css() -> None:
-    st.markdown(
-        """
-        <style>
-        /* --------- Fuente + layout base --------- */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        html, body, [class*="css"] {
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-
-        body {
-            background:
-                radial-gradient(circle at 0% 0%, #1d2357 0, #020617 40%, #020617 100%);
-        }
-
-        .main .block-container {
-            max-width: 1200px;
-            padding-top: 2.5rem;
-            padding-bottom: 3rem;
-        }
-
-        /* --------- Hero principal con degradado animado --------- */
-        .sf-hero {
-            padding: 1.75rem 1.9rem;
-            border-radius: 20px;
-            background: linear-gradient(125deg,
-                        rgba(59,130,246,0.22),
-                        rgba(236,72,153,0.18),
-                        rgba(34,197,94,0.16));
-            background-size: 240% 240%;
-            animation: sfGradientMove 22s ease-in-out infinite;
-            border: 1px solid rgba(148,163,184,0.45);
-            box-shadow: 0 20px 48px rgba(15,23,42,0.85);
-            margin-bottom: 1.4rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        @keyframes sfGradientMove {
-            0%   { background-position: 0%   50%; }
-            50%  { background-position: 100% 50%; }
-            100% { background-position: 0%   50%; }
-        }
-
-        .sf-hero::after {
-            content: "";
-            position: absolute;
-            inset: -40%;
-            background: radial-gradient(circle at 0 0,
-                        rgba(248,250,252,0.18),
-                        transparent 55%);
-            opacity: 0.7;
-            pointer-events: none;
-            mix-blend-mode: screen;
-        }
-
-        .sf-hero-title {
-            position: relative;
-            font-size: 2.1rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            background: linear-gradient(90deg,#f9fafb,#a5b4fc,#f472b6,#facc15);
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-
-        .sf-hero-subtitle {
-            position: relative;
-            margin-top: 0.35rem;
-            font-size: 0.96rem;
-            color: #e5e7eb;
-            opacity: 0.92;
-        }
-
-        .sf-hero-badge {
-            position: relative;
-            margin-top: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.22rem 0.75rem;
-            border-radius: 999px;
-            border: 1px solid rgba(94,234,212,0.9);
-            background: rgba(15,118,110,0.35);
-            color: #ccfbf1;
-            font-size: 0.78rem;
-            box-shadow: 0 0 0 1px rgba(15,23,42,0.6);
-        }
-
-        /* --------- Sidebar --------- */
-        section[data-testid="stSidebar"] {
-            background: linear-gradient(180deg,#020617,#020617);
-            border-right: 1px solid rgba(148,163,184,0.45);
-        }
-
-        section[data-testid="stSidebar"] .stButton button {
-            width: 100%;
-        }
-
-        /* --------- Tabs --------- */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 0.75rem;
-            padding-bottom: 0.3rem;
-            margin-top: 0.35rem;
-        }
-
-        .stTabs [data-baseweb="tab"] {
-            padding: 0.45rem 1.2rem;
-            border-radius: 999px;
-            border: 1px solid rgba(148,163,184,0.35);
-            background: radial-gradient(circle at 0 0, #020617, #020617);
-            color: #e5e7eb;
-            transition:
-                transform 0.16s ease-out,
-                box-shadow 0.16s ease-out,
-                border-color 0.18s ease-out,
-                background 0.18s ease-out;
-            position: relative;
-            overflow: visible;
-        }
-
-        /* Tab activo */
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            border-color: rgba(129,140,248,0.95);
-            background: radial-gradient(circle at 0 0,#4338ca,#1d4ed8);
-            box-shadow: 0 10px 26px rgba(15,23,42,0.9);
-        }
-
-        /* Hover: solo escala (no se corta arriba) */
-        .stTabs [data-baseweb="tab"]:hover {
-            transform: scale(1.02);
-            box-shadow: 0 12px 30px rgba(15,23,42,0.95);
-            border-color: rgba(191,219,254,0.85);
-        }
-
-        /* Glow debajo de tabs */
-        .stTabs [data-baseweb="tab-list"]::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: -0.28rem;
-            height: 2px;
-            background: linear-gradient(90deg,#22c55e,#6366f1,#f97316);
-            opacity: 0.55;
-        }
-
-        /* --------- Botones --------- */
-        .stButton button {
-            border-radius: 999px;
-            border: 1px solid rgba(148,163,184,0.55);
-            background: radial-gradient(circle at 0 0,#4f46e5,#1d4ed8);
-            color: #f9fafb;
-            font-weight: 500;
-            padding: 0.42rem 1.3rem;
-            transition:
-                transform 0.11s ease-out,
-                box-shadow 0.11s ease-out,
-                background 0.20s ease-out,
-                border-color 0.2s ease-out;
-            cursor: pointer;
-        }
-
-        .stButton button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 12px 30px rgba(30,64,175,0.9);
-            background: radial-gradient(circle at 0 0,#6366f1,#2563eb);
-            border-color: rgba(191,219,254,0.85);
-        }
-
-        .stButton button:active {
-            transform: scale(0.97);
-            box-shadow: 0 4px 12px rgba(15,23,42,1);
-        }
-
-        /* --------- Inputs / sliders --------- */
-        input, textarea {
-            border-radius: 999px !important;
-        }
-
-        .stNumberInput input {
-            background: rgba(15,23,42,0.9);
-            border-radius: 999px !important;
-            border: 1px solid rgba(148,163,184,0.6);
-        }
-
-        .stNumberInput input:focus {
-            outline: none !important;
-            border-color: rgba(129,140,248,0.95) !important;
-            box-shadow: 0 0 0 1px rgba(129,140,248,0.9);
-        }
-
-        .stSlider > div > div > div > div {
-            background: linear-gradient(90deg,#4f46e5,#22c55e) !important;
-        }
-
-        /* --------- Expanders --------- */
-        .streamlit-expander {
-            border-radius: 18px !important;
-            border: 1px solid rgba(148,163,184,0.45) !important;
-            background: radial-gradient(circle at 0 0,
-                        rgba(15,23,42,0.98),
-                        rgba(15,23,42,0.9)) !important;
-            box-shadow: 0 18px 45px rgba(15,23,42,0.9);
-            margin-bottom: 1.0rem;
-        }
-
-        .streamlit-expanderHeader {
-            font-weight: 600 !important;
-        }
-
-        /* --------- Métricas / alerts (si se usan) --------- */
-        .stMetric, .stAlert {
-            border-radius: 16px !important;
-            background: rgba(15,23,42,0.96) !important;
-            border: 1px solid rgba(148,163,184,0.55) !important;
-        }
-
-        /* --------- Cards personalizadas (Inicio) --------- */
-        .sf-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-top: 0.75rem;
-        }
-
-        .sf-card {
-            flex: 1 1 260px;
-            background: radial-gradient(circle at 0 0,
-                        rgba(15,23,42,0.98),
-                        rgba(15,23,42,0.96));
-            border-radius: 18px;
-            border: 1px solid rgba(148,163,184,0.55);
-            padding: 1rem 1.2rem;
-            box-shadow: 0 14px 36px rgba(15,23,42,0.9);
-        }
-
-        .sf-card-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.35rem;
-            color: #e5e7eb;
-        }
-
-        .sf-card-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-top: 0.4rem;
-        }
-
-        .sf-card-label {
-            font-size: 0.82rem;
-            color: #9ca3af;
-        }
-
-        .sf-card-value {
-            font-size: 1.7rem;
-            font-weight: 600;
-            color: #f9fafb;
-        }
-
-        .sf-card-ai {
-            background: linear-gradient(135deg,
-                        rgba(22,163,74,0.85),
-                        rgba(5,46,22,0.96));
-            border-color: rgba(74,222,128,0.85);
-        }
-
-        .sf-card-ai-text {
-            margin: 0.4rem 0 0;
-            font-size: 0.9rem;
-            color: #dcfce7;
-        }
-
-        /* --------- Chip IA genérico --------- */
-        .sf-chip {
-            display:inline-flex;
-            align-items:center;
-            gap:0.35rem;
-            padding:0.22rem 0.7rem;
-            border-radius:999px;
-            border:1px solid rgba(52,211,153,0.95);
-            background:rgba(22,101,52,0.4);
-            font-size:0.8rem;
-            color:#bbf7d0;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 # =========================================================
-#  CONFIG DE PÁGINA
+#  CONFIG DE PÁGINA + ESTILOS
 # =========================================================
 
-st.set_page_config(page_title="Smart Form", page_icon="🧪", layout="wide")
-
+ui.apply_base_config()
 init_state()
-inject_global_css()
 
 # =========================================================
 #  SIDEBAR
 # =========================================================
 
 with st.sidebar:
-    st.markdown("## 🧪 Smart Form")
-    st.caption("Formulario interactivo para Matemáticas, Física y Química.")
-    st.markdown("---")
-    if has_ai():
-        st.success("IA: activada (modo mixto local / modelos externos).")
-    else:
-        st.info("IA: solo modo local (sin modelos externos).")
-    st.markdown("---")
-    if st.button("🧹 Borrar historial"):
-        clear_history()
-        st.success("Historial borrado en esta sesión.")
-
+    ui.render_sidebar(ai_on=has_ai(), on_clear_history=clear_history)
 
 # =========================================================
 #  HERO + TABS
 # =========================================================
 
-st.markdown(
-    """
-    <div class="sf-hero">
-      <div class="sf-hero-title">Smart Form</div>
-      <div class="sf-hero-subtitle">
-        Practica Matemáticas, Física y Química con ejercicios interactivos,
-        pistas y modo PRUEBATE.
-      </div>
-      <div class="sf-hero-badge">
-        🚀 Modo estudio + examen mixto
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+ui.render_hero()
 
 tabs = st.tabs(
     [
@@ -577,10 +257,6 @@ tabs = st.tabs(
         "📜 Historial",
     ]
 )
-
-# =========================================================
-#  TAB 0: INICIO
-# =========================================================
 
 # =========================================================
 #  TAB 0: INICIO
@@ -601,30 +277,7 @@ with tabs[0]:
     else:
         ai_text = "IA local: por ahora solo se usan explicaciones sin modelo externo."
 
-    st.markdown(
-        f"""
-        <div class="sf-grid">
-          <div class="sf-card">
-            <div class="sf-card-title">Configuración actual</div>
-            <div class="sf-card-body">
-              <div class="sf-card-row">
-                <span class="sf-card-label">Tolerancia</span>
-                <span class="sf-card-value">{tol_pct:.1f}%</span>
-              </div>
-              <div class="sf-card-row">
-                <span class="sf-card-label">Preguntas PRUEBATE</span>
-                <span class="sf-card-value">{q}</span>
-              </div>
-            </div>
-          </div>
-          <div class="sf-card sf-card-ai">
-            <div class="sf-card-title">Estado de IA</div>
-            <p class="sf-card-ai-text">{ai_text}</p>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    ui.render_home_cards(tol_pct, q, ai_text)
 
     st.markdown("---")
     st.write(
@@ -706,7 +359,6 @@ with tabs[1]:
                 )
                 st.info(txt)
 
-
 # =========================================================
 #  TAB 2: FÍSICA
 # =========================================================
@@ -779,7 +431,6 @@ with tabs[2]:
                     unit=unit,
                 )
                 st.info(txt)
-
 
 # =========================================================
 #  TAB 3: QUÍMICA
@@ -854,7 +505,6 @@ with tabs[3]:
                 )
                 st.info(txt)
 
-
 # =========================================================
 #  TAB 4: PRUEBATE
 # =========================================================
@@ -862,7 +512,10 @@ with tabs[3]:
 with tabs[4]:
     st.subheader("🎯 PRUEBATE (mixto)")
 
-    with st.expander("⚙ Configuración de PRUEBATE y tolerancia", expanded=not st.session_state.pruebate_active):
+    with st.expander(
+        "⚙ Configuración de PRUEBATE y tolerancia",
+        expanded=not st.session_state.pruebate_active,
+    ):
         tol_pct_ui = st.slider(
             "Tolerancia (%)",
             min_value=0.1,
@@ -1011,7 +664,6 @@ with tabs[4]:
             st.session_state.pruebate_misses = []
             st.session_state.pruebate_active = False
             st.rerun()
-
 
 # =========================================================
 #  TAB 5: HISTORIAL
