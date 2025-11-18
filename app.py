@@ -18,7 +18,11 @@ from core.topics_phys import PHYS_TOPICS
     # noqa: E402
 from core.topics_chem import CHM_TOPICS
 from core.ai import ask_ai, has_ai
-from core import ui  # nuevo módulo de estilos
+# Intentamos importar el módulo de UI (estilos)
+try:
+    import core.ui as ui
+except Exception:
+    ui = None
 
 
 # =========================================================
@@ -232,7 +236,12 @@ def init_state() -> None:
 #  CONFIG DE PÁGINA + ESTILOS
 # =========================================================
 
-ui.apply_base_config()
+if ui is not None and hasattr(ui, "apply_base_config"):
+    ui.apply_base_config()
+else:
+    # Fallback simple por si el módulo core.ui no se cargara bien
+    st.set_page_config(page_title="Smart Form", page_icon="🧪", layout="wide")
+
 init_state()
 
 # =========================================================
