@@ -1,8 +1,8 @@
 # path: app.py
 from __future__ import annotations
 
-import random
 import math
+import random
 
 import streamlit as st
 
@@ -17,7 +17,6 @@ from core.utils import (
 from core.topics_phys import PHYS_TOPICS
 from core.topics_chem import CHM_TOPICS
 from core.ai import ask_ai, has_ai
-
 
 # =========================================================
 #  FALLBACK DE MATEMÁTICAS (por si el módulo importado está incompleto)
@@ -205,7 +204,7 @@ else:
 
 
 # =========================================================
-#  INICIALIZACIÓN DE ESTADO + ESTILOS
+#  ESTADO GLOBAL
 # =========================================================
 
 def init_state() -> None:
@@ -226,6 +225,33 @@ def init_state() -> None:
         st.session_state.pruebate_misses = []
 
 
+def get_or_init_exercise(topic: Topic) -> dict:
+    """
+    Devuelve un ejercicio fijo por tema (no cambia en cada rerun).
+    Solo se regenera cuando el usuario pide "Nuevo ejercicio".
+    """
+    key = f"ex_{topic.area}_{topic.name}"
+    if key not in st.session_state:
+        enun, expected, unit, hint = topic.exercise()
+        st.session_state[key] = {
+            "enunciado": enun,
+            "correcto": float(expected),
+            "unit": unit,
+            "hint": hint,
+        }
+    return st.session_state[key]
+
+
+def reset_exercise(topic: Topic) -> None:
+    key = f"ex_{topic.area}_{topic.name}"
+    if key in st.session_state:
+        del st.session_state[key]
+
+
+# =========================================================
+#  ESTILOS GLOBALES
+# =========================================================
+
 def inject_global_css() -> None:
     st.markdown(
         """
@@ -239,7 +265,7 @@ def inject_global_css() -> None:
 
         body {
             background:
-                radial-gradient(circle at 0% 0%, #1d2357 0, #020617 40%, #020617 100%);
+                radial-gradient(circle at 0% 0%, #020617 0, #020617 40%, #020617 100%);
         }
 
         .main .block-container {
@@ -248,78 +274,110 @@ def inject_global_css() -> None:
             padding-bottom: 3rem;
         }
 
-        /* --------- Hero principal con degradado animado --------- */
-        .sf-hero {
-            padding: 1.75rem 1.9rem;
-            border-radius: 20px;
-            background: linear-gradient(125deg,
-                        rgba(59,130,246,0.22),
-                        rgba(236,72,153,0.18),
-                        rgba(34,197,94,0.16));
-            background-size: 240% 240%;
-            animation: sfGradientMove 22s ease-in-out infinite;
-            border: 1px solid rgba(148,163,184,0.45);
-            box-shadow: 0 20px 48px rgba(15,23,42,0.85);
-            margin-bottom: 1.4rem;
-            position: relative;
-            overflow: hidden;
-        }
-
+        /* --------- Animaciones suaves --------- */
         @keyframes sfGradientMove {
             0%   { background-position: 0%   50%; }
             50%  { background-position: 100% 50%; }
             100% { background-position: 0%   50%; }
         }
 
+        @keyframes sfFadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sf-fade {
+            animation: sfFadeInUp 0.45s ease-out both;
+        }
+
+        /* --------- Hero principal con degradado animado --------- */
+        .sf-hero {
+            padding: 1.8rem 1.9rem;
+            border-radius: 22px;
+            background: linear-gradient(135deg,
+                        rgba(15,23,42,0.98),
+                        rgba(15,23,42,0.98));
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(148,163,184,0.55);
+            box-shadow:
+                0 22px 60px rgba(15,23,42,0.95),
+                0 0 0 1px rgba(15,23,42,0.9);
+        }
+
+        .sf-hero::before {
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background: radial-gradient(circle at 0% 0%,
+                        rgba(56,189,248,0.28),
+                        transparent 55%);
+            opacity: 0.8;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            animation: sfGradientMove 18s ease-in-out infinite;
+        }
+
         .sf-hero::after {
             content: "";
             position: absolute;
             inset: -40%;
-            background: radial-gradient(circle at 0 0,
-                        rgba(248,250,252,0.18),
+            background: radial-gradient(circle at 100% 100%,
+                        rgba(244,114,182,0.24),
                         transparent 55%);
-            opacity: 0.7;
-            pointer-events: none;
+            opacity: 0.8;
             mix-blend-mode: screen;
+            pointer-events: none;
+            animation: sfGradientMove 22s ease-in-out infinite;
+        }
+
+        .sf-hero-inner {
+            position: relative;
+            z-index: 1;
         }
 
         .sf-hero-title {
-            position: relative;
-            font-size: 2.1rem;
+            font-size: 2.15rem;
             font-weight: 700;
-            letter-spacing: 0.03em;
-            background: linear-gradient(90deg,#f9fafb,#a5b4fc,#f472b6,#facc15);
+            letter-spacing: 0.04em;
+            background: linear-gradient(90deg,#f9fafb,#e5e7eb,#a5b4fc,#f472b6,#facc15);
             -webkit-background-clip: text;
             color: transparent;
         }
 
         .sf-hero-subtitle {
-            position: relative;
             margin-top: 0.35rem;
-            font-size: 0.96rem;
+            font-size: 0.98rem;
             color: #e5e7eb;
             opacity: 0.92;
         }
 
         .sf-hero-badge {
-            position: relative;
-            margin-top: 0.9rem;
+            margin-top: 0.95rem;
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            padding: 0.22rem 0.75rem;
+            padding: 0.26rem 0.8rem;
             border-radius: 999px;
             border: 1px solid rgba(94,234,212,0.9);
-            background: rgba(15,118,110,0.35);
+            background: rgba(15,118,110,0.5);
             color: #ccfbf1;
             font-size: 0.78rem;
-            box-shadow: 0 0 0 1px rgba(15,23,42,0.6);
+            box-shadow:
+                0 0 0 1px rgba(15,23,42,0.85),
+                0 10px 30px rgba(15,23,42,0.95);
         }
 
         /* --------- Sidebar --------- */
         section[data-testid="stSidebar"] {
-            background: linear-gradient(180deg,#020617,#020617);
-            border-right: 1px solid rgba(148,163,184,0.45);
+            background: radial-gradient(circle at 0 0,#020617 0,#020617 70%,#020617 100%);
+            border-right: 1px solid rgba(30,64,175,0.65);
         }
 
         section[data-testid="stSidebar"] .stButton button {
@@ -331,10 +389,11 @@ def inject_global_css() -> None:
             gap: 0.75rem;
             padding-bottom: 0.3rem;
             margin-top: 0.35rem;
+            position: relative;
         }
 
         .stTabs [data-baseweb="tab"] {
-            padding: 0.45rem 1.2rem;
+            padding: 0.45rem 1.25rem;
             border-radius: 999px;
             border: 1px solid rgba(148,163,184,0.35);
             background: radial-gradient(circle at 0 0, #020617, #020617);
@@ -348,21 +407,18 @@ def inject_global_css() -> None:
             overflow: visible;
         }
 
-        /* Tab activo */
         .stTabs [data-baseweb="tab"][aria-selected="true"] {
             border-color: rgba(129,140,248,0.95);
             background: radial-gradient(circle at 0 0,#4338ca,#1d4ed8);
-            box-shadow: 0 10px 26px rgba(15,23,42,0.9);
+            box-shadow: 0 14px 34px rgba(15,23,42,0.95);
         }
 
-        /* Hover: solo escala (no se corta arriba) */
         .stTabs [data-baseweb="tab"]:hover {
-            transform: scale(1.02);
+            transform: translateY(-1px);
             box-shadow: 0 12px 30px rgba(15,23,42,0.95);
             border-color: rgba(191,219,254,0.85);
         }
 
-        /* Glow debajo de tabs */
         .stTabs [data-baseweb="tab-list"]::after {
             content: "";
             position: absolute;
@@ -391,14 +447,14 @@ def inject_global_css() -> None:
         }
 
         .stButton button:hover {
-            transform: scale(1.02);
+            transform: translateY(-1px);
             box-shadow: 0 12px 30px rgba(30,64,175,0.9);
             background: radial-gradient(circle at 0 0,#6366f1,#2563eb);
             border-color: rgba(191,219,254,0.85);
         }
 
         .stButton button:active {
-            transform: scale(0.97);
+            transform: translateY(0);
             box-shadow: 0 4px 12px rgba(15,23,42,1);
         }
 
@@ -408,7 +464,7 @@ def inject_global_css() -> None:
         }
 
         .stNumberInput input {
-            background: rgba(15,23,42,0.9);
+            background: rgba(15,23,42,0.96);
             border-radius: 999px !important;
             border: 1px solid rgba(148,163,184,0.6);
         }
@@ -429,7 +485,7 @@ def inject_global_css() -> None:
             border: 1px solid rgba(148,163,184,0.45) !important;
             background: radial-gradient(circle at 0 0,
                         rgba(15,23,42,0.98),
-                        rgba(15,23,42,0.9)) !important;
+                        rgba(15,23,42,0.96)) !important;
             box-shadow: 0 18px 45px rgba(15,23,42,0.9);
             margin-bottom: 1.0rem;
         }
@@ -438,14 +494,14 @@ def inject_global_css() -> None:
             font-weight: 600 !important;
         }
 
-        /* --------- Métricas / alerts (si se usan) --------- */
+        /* --------- Métricas / alerts --------- */
         .stMetric, .stAlert {
             border-radius: 16px !important;
-            background: rgba(15,23,42,0.96) !important;
+            background: rgba(15,23,42,0.97) !important;
             border: 1px solid rgba(148,163,184,0.55) !important;
         }
 
-        /* --------- Cards personalizadas (Inicio) --------- */
+        /* --------- Cards (Inicio) --------- */
         .sf-grid {
             display: flex;
             flex-wrap: wrap;
@@ -457,7 +513,7 @@ def inject_global_css() -> None:
             flex: 1 1 260px;
             background: radial-gradient(circle at 0 0,
                         rgba(15,23,42,0.98),
-                        rgba(15,23,42,0.96));
+                        rgba(15,23,42,0.97));
             border-radius: 18px;
             border: 1px solid rgba(148,163,184,0.55);
             padding: 1rem 1.2rem;
@@ -502,7 +558,6 @@ def inject_global_css() -> None:
             color: #dcfce7;
         }
 
-        /* --------- Chip IA genérico --------- */
         .sf-chip {
             display:inline-flex;
             align-items:center;
@@ -521,72 +576,45 @@ def inject_global_css() -> None:
 
 
 # =========================================================
-#  CONFIG DE PÁGINA
+#  COMPONENTES DE UI
 # =========================================================
 
-st.set_page_config(page_title="Smart Form", page_icon="🧪", layout="wide")
-
-init_state()
-inject_global_css()
-
-# =========================================================
-#  SIDEBAR
-# =========================================================
-
-with st.sidebar:
-    st.markdown("## 🧪 Smart Form")
-    st.caption("Formulario interactivo para Matemáticas, Física y Química.")
-    st.markdown("---")
-    if has_ai():
-        st.success("IA: activada (modo mixto local / modelos externos).")
-    else:
-        st.info("IA: solo modo local (sin modelos externos).")
-    st.markdown("---")
-    if st.button("🧹 Borrar historial"):
-        clear_history()
-        st.success("Historial borrado en esta sesión.")
+def render_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("## 🧪 Smart Form")
+        st.caption("Formulario interactivo para Matemáticas, Física y Química.")
+        st.markdown("---")
+        if has_ai():
+            st.success("IA: activada (modo mixto local / modelos externos).")
+        else:
+            st.info("IA: solo modo local (sin modelos externos).")
+        st.markdown("---")
+        if st.button("🧹 Borrar historial"):
+            clear_history()
+            st.success("Historial borrado en esta sesión.")
 
 
-# =========================================================
-#  HERO + TABS
-# =========================================================
+def render_hero() -> None:
+    st.markdown(
+        """
+        <div class="sf-hero sf-fade">
+          <div class="sf-hero-inner">
+            <div class="sf-hero-title">Smart Form</div>
+            <div class="sf-hero-subtitle">
+              Practica Matemáticas, Física y Química con ejercicios interactivos,
+              pistas y modo PRUEBATE.
+            </div>
+            <div class="sf-hero-badge">
+              🚀 Modo estudio + examen mixto · feedback inmediato
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-st.markdown(
-    """
-    <div class="sf-hero">
-      <div class="sf-hero-title">Smart Form</div>
-      <div class="sf-hero-subtitle">
-        Practica Matemáticas, Física y Química con ejercicios interactivos,
-        pistas y modo PRUEBATE.
-      </div>
-      <div class="sf-hero-badge">
-        🚀 Modo estudio + examen mixto
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
-tabs = st.tabs(
-    [
-        "🏠 Inicio",
-        "🧮 Matemáticas",
-        "🧲 Física",
-        "⚗️ Química",
-        "🎯 PRUEBATE",
-        "📜 Historial",
-    ]
-)
-
-# =========================================================
-#  TAB 0: INICIO
-# =========================================================
-
-# =========================================================
-#  TAB 0: INICIO
-# =========================================================
-
-with tabs[0]:
+def render_home_tab() -> None:
     st.subheader("Bienvenido 👋")
     st.write(
         "Esta es la vista general de **Smart Form**. "
@@ -603,7 +631,7 @@ with tabs[0]:
 
     st.markdown(
         f"""
-        <div class="sf-grid">
+        <div class="sf-grid sf-fade">
           <div class="sf-card">
             <div class="sf-card-title">Configuración actual</div>
             <div class="sf-card-body">
@@ -633,50 +661,67 @@ with tabs[0]:
         "Cada intento se guarda en el historial para que puedas ver tu progreso."
     )
 
-# =========================================================
-#  TAB 1: MATEMÁTICAS
-# =========================================================
 
-with tabs[1]:
-    st.markdown("## 🧮 Matemáticas")
+def render_topic_tab(area_code: str, area_name: str, icon: str, topics: list[Topic]) -> None:
+    st.markdown(f"## {icon} {area_name}")
 
-    topic_names = [t.name for t in MATH_TOPICS]
-    sel_topic_name = st.selectbox("Selecciona un tema", topic_names)
-    topic = MATH_TOPICS[topic_names.index(sel_topic_name)]
+    topic_names = [t.name for t in topics]
+    sel_topic_name = st.selectbox(
+        f"Selecciona un tema de {area_name}",
+        topic_names,
+        key=f"select_{area_code}",
+    )
+    topic = topics[topic_names.index(sel_topic_name)]
 
+    # Si cambias de tema, reiniciamos el ejercicio guardado para ese tema
+    last_topic_key = f"last_topic_{area_code}"
+    if st.session_state.get(last_topic_key) != sel_topic_name:
+        st.session_state[last_topic_key] = sel_topic_name
+        reset_exercise(topic)
+
+    # ---------- Explicación ----------
     with st.expander("📘 Explicación del tema", expanded=True):
         st.write(topic.explain())
-        if st.button("Pedir explicación IA del tema", key="math_ai_topic"):
+        if st.button("Pedir explicación IA del tema", key=f"{area_code}_ai_topic"):
             txt = ask_ai(
-                topic=f"Matemáticas: {topic.name}",
+                topic=f"{area_name}: {topic.name}",
                 prompt=topic.explain(),
                 expected=None,
                 unit="",
             )
             st.info(txt)
 
+    # ---------- Ejemplo ----------
     with st.expander("🧪 Ejemplo resuelto", expanded=False):
         enun_ex, sol_ex = topic.example()
         st.write(enun_ex)
-        if st.button("Mostrar solución del ejemplo", key="math_show_example"):
+        if st.button("Mostrar solución del ejemplo", key=f"{area_code}_show_example"):
             st.success(sol_ex)
 
+    # ---------- Ejercicio interactivo ----------
     with st.expander("📝 Ejercicio interactivo", expanded=False):
-        enun_exe, expected, unit, hint = topic.exercise()
+        ex_data = get_or_init_exercise(topic)
+        enun_exe = ex_data["enunciado"]
+        expected = float(ex_data["correcto"])
+        unit = ex_data["unit"]
+        hint = ex_data["hint"]
+
         st.write(enun_exe)
         user = st.number_input(
-            "Tu respuesta (Matemáticas)",
+            f"Tu respuesta ({area_name})",
             value=0.0,
             step=0.1,
             format="%.6f",
-            key="math_answer",
+            key=f"{area_code}_answer",
         )
-        b1, b2 = st.columns(2)
+
+        b1, b2, b3 = st.columns(3)
+
         with b1:
-            if st.button("Corregir (Matemáticas)", key="math_check"):
+            if st.button(f"Corregir ({area_name})", key=f"{area_code}_check"):
                 ok = within_tol(expected, float(user), st.session_state.tol_pct)
                 add_history(
-                    area="Matemáticas",
+                    area=area_name,
                     tema=topic.name,
                     tipo="Ejercicio",
                     correcto=expected,
@@ -688,10 +733,11 @@ with tabs[1]:
                 else:
                     st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
                     st.caption("Pista: " + hint)
+
         with b2:
             if st.button(
-                "Pedir explicación IA de este ejercicio (Matemáticas)",
-                key="math_ai_exercise",
+                "Pedir explicación IA de este ejercicio",
+                key=f"{area_code}_ai_exercise",
             ):
                 prompt_ai = (
                     f"{enun_exe}\n"
@@ -699,170 +745,29 @@ with tabs[1]:
                     f"(el sistema conoce un valor de referencia para revisar)."
                 )
                 txt = ask_ai(
-                    topic=f"Matemáticas: {topic.name}",
+                    topic=f"{area_name}: {topic.name}",
                     prompt=prompt_ai,
                     expected=expected,
                     unit=unit,
                 )
                 st.info(txt)
 
-
-# =========================================================
-#  TAB 2: FÍSICA
-# =========================================================
-
-with tabs[2]:
-    st.markdown("## 🧲 Física")
-
-    phys_names = [t.name for t in PHYS_TOPICS]
-    sel_phys_name = st.selectbox("Selecciona un tema de Física", phys_names)
-    phys_topic = PHYS_TOPICS[phys_names.index(sel_phys_name)]
-
-    with st.expander("📘 Explicación del tema", expanded=True):
-        st.write(phys_topic.explain())
-        if st.button("Pedir explicación IA del tema (Física)", key="phys_ai_topic"):
-            txt = ask_ai(
-                topic=f"Física: {phys_topic.name}",
-                prompt=phys_topic.explain(),
-                expected=None,
-                unit="",
-            )
-            st.info(txt)
-
-    with st.expander("🧪 Ejemplo resuelto", expanded=False):
-        enun_ex, sol_ex = phys_topic.example()
-        st.write(enun_ex)
-        if st.button("Mostrar solución del ejemplo (Física)", key="phys_show_example"):
-            st.success(sol_ex)
-
-    with st.expander("📝 Ejercicio interactivo", expanded=False):
-        enun_exe, expected, unit, hint = phys_topic.exercise()
-        st.write(enun_exe)
-        user = st.number_input(
-            "Tu respuesta (Física)",
-            value=0.0,
-            step=0.1,
-            format="%.6f",
-            key="phys_answer",
-        )
-        b1, b2 = st.columns(2)
-        with b1:
-            if st.button("Corregir (Física)", key="phys_check"):
-                ok = within_tol(expected, float(user), st.session_state.tol_pct)
-                add_history(
-                    area="Física",
-                    tema=phys_topic.name,
-                    tipo="Ejercicio",
-                    correcto=expected,
-                    usuario=float(user),
-                    acierto=ok,
-                )
-                if ok:
-                    st.success(f"CORRECTO ✅ — Solución: {expected:.6f} {unit}")
-                else:
-                    st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
-                    st.caption("Pista: " + hint)
-        with b2:
+        with b3:
             if st.button(
-                "Pedir explicación IA de este ejercicio (Física)",
-                key="phys_ai_exercise",
+                "🔁 Nuevo ejercicio",
+                key=f"{area_code}_new_exercise",
             ):
-                prompt_ai = (
-                    f"{enun_exe}\n"
-                    f"La respuesta del alumno fue: {float(user):.6f} {unit} "
-                    f"(el sistema conoce un valor de referencia para revisar)."
-                )
-                txt = ask_ai(
-                    topic=f"Física: {phys_topic.name}",
-                    prompt=prompt_ai,
-                    expected=expected,
-                    unit=unit,
-                )
-                st.info(txt)
+                reset_exercise(topic)
+                st.experimental_rerun()
 
 
-# =========================================================
-#  TAB 3: QUÍMICA
-# =========================================================
-
-with tabs[3]:
-    st.markdown("## ⚗️ Química")
-
-    chem_names = [t.name for t in CHM_TOPICS]
-    sel_chem_name = st.selectbox("Selecciona un tema de Química", chem_names)
-    chem_topic = CHM_TOPICS[chem_names.index(sel_chem_name)]
-
-    with st.expander("📘 Explicación del tema", expanded=True):
-        st.write(chem_topic.explain())
-        if st.button("Pedir explicación IA del tema (Química)", key="chem_ai_topic"):
-            txt = ask_ai(
-                topic=f"Química: {chem_topic.name}",
-                prompt=chem_topic.explain(),
-                expected=None,
-                unit="",
-            )
-            st.info(txt)
-
-    with st.expander("🧪 Ejemplo resuelto", expanded=False):
-        enun_ex, sol_ex = chem_topic.example()
-        st.write(enun_ex)
-        if st.button("Mostrar solución del ejemplo (Química)", key="chem_show_example"):
-            st.success(sol_ex)
-
-    with st.expander("📝 Ejercicio interactivo", expanded=False):
-        enun_exe, expected, unit, hint = chem_topic.exercise()
-        st.write(enun_exe)
-        user = st.number_input(
-            "Tu respuesta (Química)",
-            value=0.0,
-            step=0.1,
-            format="%.6f",
-            key="chem_answer",
-        )
-        b1, b2 = st.columns(2)
-        with b1:
-            if st.button("Corregir (Química)", key="chem_check"):
-                ok = within_tol(expected, float(user), st.session_state.tol_pct)
-                add_history(
-                    area="Química",
-                    tema=chem_topic.name,
-                    tipo="Ejercicio",
-                    correcto=expected,
-                    usuario=float(user),
-                    acierto=ok,
-                )
-                if ok:
-                    st.success(f"CORRECTO ✅ — Solución: {expected:.6f} {unit}")
-                else:
-                    st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
-                    st.caption("Pista: " + hint)
-        with b2:
-            if st.button(
-                "Pedir explicación IA de este ejercicio (Química)",
-                key="chem_ai_exercise",
-            ):
-                prompt_ai = (
-                    f"{enun_exe}\n"
-                    f"La respuesta del alumno fue: {float(user):.6f} {unit} "
-                    f"(el sistema conoce un valor de referencia para revisar)."
-                )
-                txt = ask_ai(
-                    topic=f"Química: {chem_topic.name}",
-                    prompt=prompt_ai,
-                    expected=expected,
-                    unit=unit,
-                )
-                st.info(txt)
-
-
-# =========================================================
-#  TAB 4: PRUEBATE
-# =========================================================
-
-with tabs[4]:
+def render_pruebate_tab() -> None:
     st.subheader("🎯 PRUEBATE (mixto)")
 
-    with st.expander("⚙ Configuración de PRUEBATE y tolerancia", expanded=not st.session_state.pruebate_active):
+    with st.expander(
+        "⚙ Configuración de PRUEBATE y tolerancia",
+        expanded=not st.session_state.pruebate_active,
+    ):
         tol_pct_ui = st.slider(
             "Tolerancia (%)",
             min_value=0.1,
@@ -900,7 +805,7 @@ with tabs[4]:
                     "area": topic.area,
                     "tema": topic.name,
                     "enunciado": enun,
-                    "correcto": expected,
+                    "correcto": float(expected),
                     "unit": unit,
                     "hint": hint,
                 }
@@ -921,12 +826,13 @@ with tabs[4]:
         )
         if st.button("🚀 Iniciar PRUEBATE"):
             _start_pruebate()
-            st.rerun()
+            st.experimental_rerun()
 
     if st.session_state.pruebate_active:
         q_list = st.session_state.pruebate_questions
         idx = st.session_state.pruebate_idx
         total = len(q_list)
+
         if idx >= total:
             _finish_pruebate()
         else:
@@ -934,6 +840,7 @@ with tabs[4]:
             st.markdown(f"**Pregunta {idx + 1} de {total}**")
             st.caption(f"{q['area']} · {q['tema']}")
             st.write(q["enunciado"])
+
             user_key = f"pruebate_answer_{idx}"
             user_answer = st.number_input(
                 "Tu respuesta",
@@ -942,6 +849,7 @@ with tabs[4]:
                 format="%.6f",
                 key=user_key,
             )
+
             c1, c2 = st.columns(2)
             with c1:
                 btn_label = (
@@ -978,7 +886,8 @@ with tabs[4]:
                     st.session_state.pruebate_idx += 1
                     if st.session_state.pruebate_idx >= total:
                         _finish_pruebate()
-                    st.rerun()
+                    st.experimental_rerun()
+
             with c2:
                 st.info(
                     "Responde con calma. Al final verás un resumen con tu calificación "
@@ -1003,6 +912,7 @@ with tabs[4]:
                 st.write(f"- {area} · {tema} (errores: {c})")
         else:
             st.write("¡Excelente! No tuviste errores en este PRUEBATE. 🎉")
+
         st.markdown("---")
         if st.button("🔁 Hacer otro PRUEBATE"):
             st.session_state.pruebate_idx = 0
@@ -1010,14 +920,10 @@ with tabs[4]:
             st.session_state.pruebate_questions = []
             st.session_state.pruebate_misses = []
             st.session_state.pruebate_active = False
-            st.rerun()
+            st.experimental_rerun()
 
 
-# =========================================================
-#  TAB 5: HISTORIAL
-# =========================================================
-
-with tabs[5]:
+def render_history_tab() -> None:
     st.subheader("📜 Historial")
     df = get_history_df()
     if df.empty:
@@ -1035,3 +941,44 @@ with tabs[5]:
             file_name="smartform_historial.csv",
             mime="text/csv",
         )
+
+
+# =========================================================
+#  MAIN
+# =========================================================
+
+st.set_page_config(page_title="Smart Form", page_icon="🧪", layout="wide")
+
+init_state()
+inject_global_css()
+render_sidebar()
+render_hero()
+
+tabs = st.tabs(
+    [
+        "🏠 Inicio",
+        "🧮 Matemáticas",
+        "🧲 Física",
+        "⚗️ Química",
+        "🎯 PRUEBATE",
+        "📜 Historial",
+    ]
+)
+
+with tabs[0]:
+    render_home_tab()
+
+with tabs[1]:
+    render_topic_tab("mat", "Matemáticas", "🧮", MATH_TOPICS)
+
+with tabs[2]:
+    render_topic_tab("fis", "Física", "🧲", PHYS_TOPICS)
+
+with tabs[3]:
+    render_topic_tab("qui", "Química", "⚗️", CHM_TOPICS)
+
+with tabs[4]:
+    render_pruebate_tab()
+
+with tabs[5]:
+    render_history_tab()
