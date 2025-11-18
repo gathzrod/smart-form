@@ -5,7 +5,7 @@ import streamlit as st
 
 
 def apply_base_config() -> None:
-    """Configura la página y aplica todos los estilos globales."""
+    """Configura la página y aplica todos los estilos globales (tema claro tipo Apple)."""
     st.set_page_config(
         page_title="Smart Form",
         page_icon="🧪",
@@ -15,12 +15,12 @@ def apply_base_config() -> None:
 
 
 def _inject_global_css() -> None:
-    """CSS global con estética tipo Apple: limpio, sutil y sin animaciones estridentes."""
+    """CSS global con estética tipo Apple / liquid glass en blanco."""
     st.markdown(
         """
         <style>
         :root {
-            color-scheme: dark;
+            color-scheme: light;
         }
 
         /* --------- Fuente + layout base --------- */
@@ -29,7 +29,8 @@ def _inject_global_css() -> None:
         }
 
         body {
-            background: radial-gradient(circle at 0 0, #020617 0, #020617 45%, #000000 100%);
+            background:
+                radial-gradient(circle at 0 0, #ffffff 0, #f5f5f7 45%, #e5e7eb 100%);
         }
 
         .main .block-container {
@@ -38,23 +39,33 @@ def _inject_global_css() -> None:
             padding-bottom: 3rem;
         }
 
-        /* --------- Sidebar --------- */
+        /* --------- Texto general --------- */
+        .stMarkdown, .stText, .stSubheader, .stCaption {
+            color: #111827;
+        }
+
+        /* --------- Sidebar (glass) --------- */
         section[data-testid="stSidebar"] {
-            background: #020617;
+            background: rgba(255,255,255,0.70);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
             border-right: 1px solid rgba(148,163,184,0.35);
+            box-shadow: 0 0 30px rgba(15,23,42,0.08);
         }
 
         section[data-testid="stSidebar"] .stButton button {
             width: 100%;
         }
 
-        /* --------- Hero principal --------- */
+        /* --------- Hero principal (tarjeta grande) --------- */
         .sf-hero {
             padding: 1.8rem 2.0rem;
-            border-radius: 24px;
-            background: linear-gradient(120deg, #0f172a, #020617);
-            border: 1px solid rgba(148,163,184,0.55);
-            box-shadow: 0 18px 40px rgba(15,23,42,0.9);
+            border-radius: 26px;
+            background: linear-gradient(135deg,#ffffff,#f5f5f7);
+            border: 1px solid rgba(148,163,184,0.35);
+            box-shadow:
+                0 18px 40px rgba(15,23,42,0.16),
+                0 0 0 0.5px rgba(148,163,184,0.4);
             margin-bottom: 1.8rem;
             position: relative;
             overflow: hidden;
@@ -65,9 +76,9 @@ def _inject_global_css() -> None:
             position: absolute;
             inset: -40%;
             background:
-                radial-gradient(circle at 0 20%, rgba(96,165,250,0.25), transparent 60%),
-                radial-gradient(circle at 90% 0, rgba(251,113,133,0.22), transparent 55%);
-            opacity: 0.9;
+                radial-gradient(circle at 0 20%, rgba(59,130,246,0.18), transparent 60%),
+                radial-gradient(circle at 90% 0, rgba(251,113,133,0.15), transparent 55%);
+            opacity: 1;
             pointer-events: none;
         }
 
@@ -82,73 +93,73 @@ def _inject_global_css() -> None:
             font-size: 2.1rem;
             font-weight: 700;
             letter-spacing: 0.01em;
-            color: #f9fafb;
+            color: #111827;
         }
 
         .sf-hero-subtitle {
             font-size: 0.95rem;
-            color: #cbd5f5;
-            max-width: 38rem;
+            color: #4b5563;
+            max-width: 40rem;
         }
 
         .sf-hero-badge {
-            margin-top: 0.6rem;
+            margin-top: 0.7rem;
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            padding: 0.26rem 0.9rem;
+            gap: 0.45rem;
+            padding: 0.28rem 0.95rem;
             border-radius: 999px;
-            border: 1px solid rgba(96,165,250,0.9);
-            background: rgba(15,23,42,0.92);
-            color: #e5f0ff;
+            border: 1px solid rgba(59,130,246,0.4);
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #1d4ed8;
             font-size: 0.8rem;
         }
 
-        .sf-hero-badge span {
+        .sf-hero-badge span:first-child {
             font-size: 1rem;
         }
 
-        /* --------- Tabs (segmentados estilo iPad) --------- */
+        /* --------- Tabs tipo iOS segmentados --------- */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 0.7rem;
+            gap: 0.6rem;
             padding-bottom: 0.4rem;
-            border-bottom: 1px solid rgba(55,65,81,0.7);
             margin-bottom: 0.4rem;
+            border-bottom: 1px solid rgba(209,213,219,0.9);
         }
 
         .stTabs [data-baseweb="tab"] {
             padding: 0.46rem 1.15rem;
             border-radius: 999px;
             border: 1px solid transparent;
-            background: rgba(15,23,42,0.8);
-            color: #e5e7eb;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #374151;
             font-size: 0.88rem;
             line-height: 1.1;
             transition:
                 background 0.18s ease-out,
                 border-color 0.18s ease-out,
-                box-shadow 0.18s ease-out;
+                box-shadow 0.18s ease-out,
+                color 0.18s ease-out;
         }
 
         .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            background: linear-gradient(135deg,#2563eb,#1d4ed8);
-            border-color: rgba(129,140,248,0.9);
-            color: #f9fafb;
-            box-shadow: 0 10px 24px rgba(15,23,42,0.9);
+            background: linear-gradient(135deg,#ffffff,#e5f0ff);
+            border-color: rgba(59,130,246,0.7);
+            color: #111827;
+            box-shadow: 0 10px 24px rgba(15,23,42,0.12);
         }
 
         .stTabs [data-baseweb="tab"]:hover {
-            background: rgba(31,41,55,0.9);
-            border-color: rgba(148,163,184,0.7);
-            box-shadow: 0 8px 18px rgba(15,23,42,0.9);
+            background: rgba(249,250,251,0.9);
+            border-color: rgba(209,213,219,0.9);
+            box-shadow: 0 8px 18px rgba(15,23,42,0.10);
         }
 
-        /* --------- Texto general --------- */
-        .stMarkdown, .stText, .stSubheader, .stCaption {
-            color: #e5e7eb;
-        }
-
-        /* --------- Cards de inicio --------- */
+        /* --------- Cards de inicio (glass) --------- */
         .sf-grid {
             display: flex;
             flex-wrap: wrap;
@@ -158,17 +169,21 @@ def _inject_global_css() -> None:
 
         .sf-card {
             flex: 1 1 260px;
-            background: radial-gradient(circle at 0 0,#020617,#020617);
-            border-radius: 20px;
-            border: 1px solid rgba(55,65,81,0.9);
+            background: rgba(255,255,255,0.78);
+            border-radius: 22px;
+            border: 1px solid rgba(209,213,219,0.9);
+            box-shadow:
+                0 16px 32px rgba(15,23,42,0.12),
+                0 0 0 0.5px rgba(148,163,184,0.35);
             padding: 1.0rem 1.3rem 1.1rem;
-            box-shadow: 0 14px 30px rgba(15,23,42,0.95);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
         }
 
         .sf-card-title {
             font-size: 0.95rem;
             font-weight: 600;
-            color: #e5e7eb;
+            color: #111827;
             margin-bottom: 0.5rem;
         }
 
@@ -181,94 +196,104 @@ def _inject_global_css() -> None:
 
         .sf-card-label {
             font-size: 0.8rem;
-            color: #9ca3af;
+            color: #6b7280;
         }
 
         .sf-card-value {
             font-size: 1.7rem;
             font-weight: 600;
-            color: #f9fafb;
+            color: #111827;
         }
 
         .sf-card-ai {
-            background: radial-gradient(circle at 0 0,#022c22,#052e16);
-            border-color: rgba(22,163,74,0.9);
+            background: rgba(240,253,250,0.9);
+            border-color: rgba(52,211,153,0.9);
         }
 
         .sf-card-ai-text {
             margin: 0.3rem 0 0;
             font-size: 0.88rem;
-            color: #bbf7d0;
+            color: #047857;
         }
 
         /* --------- Botones --------- */
         .stButton button {
             border-radius: 999px;
-            border: 1px solid rgba(148,163,184,0.7);
-            background: linear-gradient(135deg,#111827,#020617);
-            color: #e5e7eb;
+            border: 1px solid rgba(209,213,219,0.9);
+            background: linear-gradient(135deg,#ffffff,#f9fafb);
+            color: #111827;
             font-weight: 500;
             padding: 0.42rem 1.1rem;
             transition:
                 background 0.16s ease-out,
                 border-color 0.16s ease-out,
-                box-shadow 0.16s ease-out;
+                box-shadow 0.16s ease-out,
+                transform 0.1s ease-out;
         }
 
         .stButton button:hover {
-            background: linear-gradient(135deg,#1f2937,#020617);
-            border-color: rgba(129,140,248,0.9);
-            box-shadow: 0 10px 22px rgba(15,23,42,1);
+            background: linear-gradient(135deg,#f9fafb,#edf2ff);
+            border-color: rgba(59,130,246,0.7);
+            box-shadow: 0 10px 22px rgba(15,23,42,0.18);
+            transform: translateY(-0.5px);
         }
 
         .stButton button:active {
-            box-shadow: 0 4px 12px rgba(15,23,42,1) inset;
+            box-shadow: 0 4px 10px rgba(15,23,42,0.18) inset;
+            transform: translateY(0);
         }
 
         /* --------- Inputs / sliders --------- */
         .stNumberInput input {
-            background: rgba(15,23,42,0.95);
+            background: rgba(255,255,255,0.9);
             border-radius: 999px !important;
-            border: 1px solid rgba(55,65,81,0.9);
-            color: #e5e7eb;
+            border: 1px solid rgba(209,213,219,0.9);
+            color: #111827;
         }
 
         .stNumberInput input:focus {
             outline: none !important;
-            border-color: rgba(129,140,248,0.95) !important;
-            box-shadow: 0 0 0 1px rgba(129,140,248,0.9);
+            border-color: #007aff !important;
+            box-shadow: 0 0 0 1px rgba(0,122,255,0.7);
         }
 
         .stSlider > div > div > div > div {
-            background: linear-gradient(90deg,#2563eb,#22c55e) !important;
+            background: linear-gradient(90deg,#3b82f6,#22c55e) !important;
         }
 
         /* --------- Expanders --------- */
         .streamlit-expander {
-            border-radius: 18px !important;
-            border: 1px solid rgba(55,65,81,0.9) !important;
-            background: rgba(15,23,42,0.97) !important;
-            box-shadow: 0 14px 30px rgba(15,23,42,0.95);
+            border-radius: 20px !important;
+            border: 1px solid rgba(209,213,219,0.9) !important;
+            background: rgba(255,255,255,0.9) !important;
+            box-shadow: 0 14px 30px rgba(15,23,42,0.10);
             margin-bottom: 0.9rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         .streamlit-expanderHeader {
             font-weight: 600 !important;
+            color: #111827 !important;
         }
 
         /* --------- Alertas / métricas --------- */
         .stAlert, .stMetric {
-            border-radius: 16px !important;
-            background: rgba(15,23,42,0.97) !important;
-            border: 1px solid rgba(55,65,81,0.9) !important;
+            border-radius: 18px !important;
+            background: rgba(255,255,255,0.95) !important;
+            border: 1px solid rgba(209,213,219,0.9) !important;
+            box-shadow: 0 12px 26px rgba(15,23,42,0.10);
         }
 
         /* --------- Dataframe (Historial) --------- */
         .stDataFrame {
-            border-radius: 18px;
+            border-radius: 20px;
             overflow: hidden;
-            border: 1px solid rgba(55,65,81,0.9);
-            box-shadow: 0 12px 26px rgba(15,23,42,0.95);
+            border: 1px solid rgba(209,213,219,0.9);
+            box-shadow: 0 12px 26px rgba(15,23,42,0.10);
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
         }
         </style>
         """,
