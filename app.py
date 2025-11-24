@@ -4,7 +4,7 @@ Aplicación principal de Smart Form.
 
 Esta app en Streamlit permite practicar Matemáticas, Física y Química
 mediante:
-- Explicaciones teóricas
+- Explicaciones teóricas con notación LaTeX
 - Ejemplos resueltos
 - Ejercicios interactivos autocorregibles
 - Un modo de examen mixto llamado PRUEBATE
@@ -56,6 +56,44 @@ STUDY_TIPS = {
         "Trabajar con moles y unidades consistentes suele aclarar mucho el procedimiento."
     ),
 }
+
+# Mapa de dificultad por tema (área, nombre) -> etiqueta
+# Puedes ajustar estos niveles según qué tan complejos sean los temas.
+TOPIC_DIFFICULTY = {
+    ("Matemáticas", "Ecuación lineal (ax + b = 0)"): "Básico",
+    ("Matemáticas", "Ecuación cuadrática"): "Intermedio",
+    ("Matemáticas", "Pitágoras (c² = a² + b²)"): "Básico",
+    ("Matemáticas", "Pendiente entre puntos"): "Intermedio",
+    # Física y Química se pueden completar cuando revises sus topics
+    # Por defecto los trataremos como "Intermedio".
+}
+
+DIFFICULTY_WEIGHTS = {
+    "Básico": 1,
+    "Intermedio": 2,
+    "Avanzado": 3,
+}
+
+
+# =========================================================
+#  FUNCIONES AUXILIARES DE DIFICULTAD
+# =========================================================
+
+def get_topic_difficulty(area: str, name: str) -> str:
+    """
+    Devuelve la dificultad asociada a un tema.
+    Si no está registrado, asume 'Intermedio'.
+    """
+    return TOPIC_DIFFICULTY.get((area, name), "Intermedio")
+
+
+def difficulty_badge_text(level: str) -> str:
+    """Devuelve una pequeña etiqueta amigable para mostrar junto al tema."""
+    if level == "Básico":
+        return "Nivel básico · ideal para repasar fundamentos."
+    if level == "Avanzado":
+        return "Nivel avanzado · problemas más retadores."
+    return "Nivel intermedio · combina conceptos y cálculo."
 
 
 # =========================================================
@@ -114,32 +152,36 @@ def render_area_tab(
     )
     topic = topics[topic_names.index(sel_topic_name)]
 
-    # Tip breve de estudio asociado al área
+    # Dificultad y tip de estudio
+    difficulty_level = get_topic_difficulty(area_label, topic.name)
+    st.caption(f"Dificultad: **{difficulty_level}**")
     study_tip = STUDY_TIPS.get(area_label, "")
 
-    # 2) Bloque de explicación teórica
+    # 2) Bloque de explicación teórica (con LaTeX)
     with st.expander("📘 Explicación del tema", expanded=True):
-        st.write(topic.explain())
+        st.markdown(topic.explain())
         if study_tip:
             if st.button(
                 "Ver tip rápido de estudio",
                 key=f"{key_prefix}_study_tip",
             ):
                 st.info(study_tip)
+        st.caption(difficulty_badge_text(difficulty_level))
 
     # 3) Bloque de ejemplo resuelto
     with st.expander("🧪 Ejemplo resuelto", expanded=False):
         enun_ex, sol_ex = topic.example()
-        st.write(enun_ex)
+        st.markdown(enun_ex)
         if st.button(
             f"Mostrar solución del ejemplo ({area_label})",
             key=f"{key_prefix}_show_example",
         ):
+            # st.success también interpreta Markdown/LaTeX
             st.success(sol_ex)
 
     # 4) Bloque de ejercicio interactivo autocorregible
     with st.expander("📝 Ejercicio interactivo", expanded=False):
-        # --- NUEVO: fijamos el ejercicio en session_state para que no cambie solo ---
+        # Clave para guardar el ejercicio actual en session_state
         ex_key = f"{key_prefix}_exercise_data"
         ex_data = st.session_state.get(ex_key)
 
@@ -161,9 +203,9 @@ def render_area_tab(
         unit = ex_data["unit"]
         hint = ex_data["hint"]
 
-        st.write(enun_exe)
+        st.markdown(enun_exe)
 
-        # Input numérico de respuesta del alumno
+        # Campo numérico para la respuesta del alumno
         user = st.number_input(
             answer_label,
             value=0.0,
@@ -179,6 +221,7 @@ def render_area_tab(
             if st.button(f"Corregir ({area_label})", key=f"{key_prefix}_check"):
                 ok = within_tol(expected, float(user), st.session_state.tol_pct)
 
+                # Registrar el intento en el historial
                 add_history(
                     area=area_label,
                     tema=topic.name,
@@ -188,13 +231,14 @@ def render_area_tab(
                     acierto=ok,
                 )
 
+                # Feedback visual al estudiante
                 if ok:
                     st.success(f"CORRECTO ✅ — Solución: {expected:.6f} {unit}")
                 else:
                     st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
                     st.caption("Pista: " + hint)
 
-        # Botón con guía general de cómo resolver este tipo de ejercicios
+        # Botón con una guía general de metodología
         with b2:
             if st.button(
                 "¿Cómo abordar este tipo de ejercicio?",
@@ -211,15 +255,11 @@ def render_area_tab(
                 st.info(mensaje)
 
 
-
 # =========================================================
 #  CONFIGURACIÓN DE PÁGINA + ESTILOS
 # =========================================================
 
-# Aplica configuración base (título, icono, layout y CSS personalizado)
 ui.apply_base_config()
-
-# Crea todas las variables de estado necesarias
 init_state()
 
 
@@ -228,8 +268,7 @@ init_state()
 # =========================================================
 
 with st.sidebar:
-    # La función del sidebar muestra el título de la app y un botón
-    # para borrar el historial de la sesión actual.
+    # Sidebar con título y botón para limpiar historial
     ui.render_sidebar(ai_on=False, on_clear_history=clear_history)
 
 
@@ -237,10 +276,8 @@ with st.sidebar:
 #  HERO + TABS PRINCIPALES
 # =========================================================
 
-# Bloque principal superior con título y descripción corta
 ui.render_hero()
 
-# Definición de las pestañas principales de navegación
 tabs = st.tabs(
     [
         "🏠 Inicio",
@@ -273,7 +310,6 @@ with tabs[0]:
         "mezcla preguntas de Matemáticas, Física y Química para simular un pequeño examen."
     )
 
-    # Tarjetas de inicio (configuración actual + descripción del modo de estudio)
     ui.render_home_cards(tol_pct, q, helper_text)
 
     st.markdown("---")
@@ -341,7 +377,6 @@ with tabs[4]:
         "⚙ Configuración de PRUEBATE y tolerancia",
         expanded=not st.session_state.pruebate_active,
     ):
-        # Slider para ajustar la tolerancia numérica
         tol_pct_ui = st.slider(
             "Tolerancia (%)",
             min_value=0.1,
@@ -351,7 +386,6 @@ with tabs[4]:
         )
         st.session_state.tol_pct = tol_pct_ui / 100.0
 
-        # Slider para fijar el número de preguntas
         pruebate_q_ui = st.slider(
             "Número de preguntas en PRUEBATE",
             min_value=1,
@@ -368,22 +402,34 @@ with tabs[4]:
 
     st.markdown("---")
 
-    # -----------------------------------------------------------------
-    # Funciones internas para gestionar el modo PRUEBATE
-    # -----------------------------------------------------------------
+    # ---------- Funciones internas para gestionar PRUEBATE ----------
+
+    def _build_weighted_topic_pool() -> list[Topic]:
+        """
+        Construye una lista de temas donde los de mayor dificultad
+        aparecen más veces, para que PRUEBATE tienda a ser más retador.
+        """
+        all_topics = list(MATH_TOPICS) + list(PHYS_TOPICS) + list(CHM_TOPICS)
+        pool: list[Topic] = []
+        for t in all_topics:
+            level = get_topic_difficulty(t.area, t.name)
+            weight = DIFFICULTY_WEIGHTS.get(level, 2)
+            pool.extend([t] * weight)
+        return pool
 
     def _start_pruebate() -> None:
         """
         Genera la lista de preguntas aleatorias para PRUEBATE
         y reinicia todos los contadores asociados.
         """
-        all_topics = list(MATH_TOPICS) + list(PHYS_TOPICS) + list(CHM_TOPICS)
+        topic_pool = _build_weighted_topic_pool()
         total_q = st.session_state.pruebate_q
         questions = []
 
         for _ in range(total_q):
-            topic = random.choice(all_topics)
+            topic = random.choice(topic_pool)
             enun, expected, unit, hint = topic.exercise()
+            level = get_topic_difficulty(topic.area, topic.name)
             questions.append(
                 {
                     "area": topic.area,
@@ -392,6 +438,7 @@ with tabs[4]:
                     "correcto": expected,
                     "unit": unit,
                     "hint": hint,
+                    "dificultad": level,
                 }
             )
 
@@ -405,9 +452,8 @@ with tabs[4]:
         """Marca el examen como terminado (no genera nuevas preguntas)."""
         st.session_state.pruebate_active = False
 
-    # -----------------------------------------------------------------
-    # 1) Vista inicial antes de empezar PRUEBATE
-    # -----------------------------------------------------------------
+    # ---------- 1) Vista inicial antes de empezar PRUEBATE ----------
+
     if not st.session_state.pruebate_active and st.session_state.pruebate_idx == 0:
         st.write(
             "PRUEBATE generará preguntas aleatorias de **Matemáticas, Física y Química**.\n"
@@ -418,24 +464,21 @@ with tabs[4]:
             _start_pruebate()
             st.rerun()
 
-    # -----------------------------------------------------------------
-    # 2) Vista durante el examen (pregunta actual)
-    # -----------------------------------------------------------------
+    # ---------- 2) Vista durante el examen (pregunta actual) ----------
+
     if st.session_state.pruebate_active:
         q_list = st.session_state.pruebate_questions
         idx = st.session_state.pruebate_idx
         total = len(q_list)
 
-        # Seguridad: si el índice se pasa del total, se fuerza el cierre
         if idx >= total:
             _finish_pruebate()
         else:
             q = q_list[idx]
             st.markdown(f"**Pregunta {idx + 1} de {total}**")
-            st.caption(f"{q['area']} · {q['tema']}")
-            st.write(q["enunciado"])
+            st.caption(f"{q['area']} · {q['tema']} · Dificultad: {q['dificultad']}")
+            st.markdown(q["enunciado"])
 
-            # Cada pregunta tiene su propio key de respuesta
             user_key = f"pruebate_answer_{idx}"
             user_answer = st.number_input(
                 "Tu respuesta",
@@ -461,7 +504,6 @@ with tabs[4]:
                         st.session_state.tol_pct,
                     )
 
-                    # Registro en historial como intento de tipo PRUEBATE
                     add_history(
                         area=q["area"],
                         tema=q["tema"],
@@ -482,10 +524,9 @@ with tabs[4]:
                         )
                         st.caption("Pista: " + q["hint"])
                         st.session_state.pruebate_misses.append(
-                            {"area": q["area"], "tema": q["tema"]}
+                            {"area": q["area"], "tema": q["tema"], "dificultad": q["dificultad"]}
                         )
 
-                    # Avance del índice y posible cierre del examen
                     st.session_state.pruebate_idx += 1
                     if st.session_state.pruebate_idx >= total:
                         _finish_pruebate()
@@ -493,13 +534,12 @@ with tabs[4]:
 
             with c2:
                 st.info(
-                    "Responde con calma. Al final verás un resumen con tu calificación "
-                    "y los temas que necesitas reforzar."
+                    "Responde con calma. Al final verás un resumen con tu calificación, "
+                    "la dificultad promedio y los temas que necesitas reforzar."
                 )
 
-    # -----------------------------------------------------------------
-    # 3) Resumen final después de terminar PRUEBATE
-    # -----------------------------------------------------------------
+    # ---------- 3) Resumen final después de terminar PRUEBATE ----------
+
     if not st.session_state.pruebate_active and st.session_state.pruebate_idx > 0:
         total = len(st.session_state.pruebate_questions)
         correct = st.session_state.pruebate_correct
@@ -510,21 +550,20 @@ with tabs[4]:
             f"Calificación: {score:.1f}/100"
         )
 
-        # Listado de temas fallados para que el alumno sepa qué reforzar
+        # Resumen de dificultades falladas
         if st.session_state.pruebate_misses:
-            st.markdown("**Temas a reforzar:**")
-            counts: dict[tuple[str, str], int] = {}
+            st.markdown("**Temas a reforzar (con dificultad):**")
+            counts: dict[tuple[str, str, str], int] = {}
             for m in st.session_state.pruebate_misses:
-                key = (m["area"], m["tema"])
+                key = (m["area"], m["tema"], m["dificultad"])
                 counts[key] = counts.get(key, 0) + 1
-            for (area, tema), c in counts.items():
-                st.write(f"- {area} · {tema} (errores: {c})")
+            for (area, tema, dif), c in counts.items():
+                st.write(f"- {area} · {tema} · {dif} (errores: {c})")
         else:
             st.write("¡Excelente! No tuviste errores en este PRUEBATE. 🎉")
 
         st.markdown("---")
 
-        # Botón para iniciar un nuevo PRUEBATE desde cero
         if st.button("🔁 Hacer otro PRUEBATE"):
             st.session_state.pruebate_idx = 0
             st.session_state.pruebate_correct = 0
@@ -541,7 +580,6 @@ with tabs[4]:
 with tabs[5]:
     st.subheader("📜 Historial")
 
-    # DataFrame con todos los intentos registrados hasta ahora
     df = get_history_df()
 
     if df.empty:
@@ -553,7 +591,6 @@ with tabs[5]:
         st.write("Historial de intentos:")
         st.dataframe(df, use_container_width=True, height=400)
 
-        # Botón para descargar el historial en formato CSV
         csv_bytes = history_to_csv(df)
         st.download_button(
             "Descargar historial en CSV",
@@ -561,3 +598,4 @@ with tabs[5]:
             file_name="smartform_historial.csv",
             mime="text/csv",
         )
+
