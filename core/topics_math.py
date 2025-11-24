@@ -3,7 +3,7 @@
 Definición de los temas de Matemáticas para Smart Form.
 
 Cada tema se modela como un objeto Topic (ver core.utils) con:
-- Una explicación teórica
+- Una explicación teórica (con algo de notación LaTeX)
 - Un ejemplo resuelto
 - Un generador de ejercicios interactivos
 """
@@ -22,24 +22,36 @@ from .utils import Topic
 # =========================================================
 
 def m_lineal_explain() -> str:
-    """Devuelve una explicación breve de la ecuación lineal en una variable."""
-    return (
-        "Ecuación lineal en una variable:\n"
-        "  a·x + b = 0 con a ≠ 0.\n\n"
-        "La idea es dejar a x sola:\n"
-        "  a·x + b = 0 → a·x = -b → x = -b / a.\n"
-        "Ten cuidado con los signos y recuerda que no se puede dividir entre cero."
-    )
+    """Explicación de la ecuación lineal en una variable, usando LaTeX."""
+    return r"""
+Una **ecuación lineal** en una variable tiene la forma:
+
+$$a x + b = 0 \quad (a \neq 0)$$
+
+La idea es despejar \(x\):
+
+1. Pasamos \(b\) al otro lado:
+
+$$a x = -b$$
+
+2. Dividimos entre \(a\):
+
+$$x = \frac{-b}{a}$$
+
+Ten cuidado con los signos y recuerda que **no se puede dividir entre cero**.
+"""
 
 
 def m_lineal_example() -> tuple[str, str]:
     """Ejemplo resuelto paso a paso de una ecuación lineal sencilla."""
     a, b = 2, -6
     x = -(b) / a
-    enun = "Ejemplo: resuelve 2x - 6 = 0."
+    enun = "Ejemplo: resuelve la ecuación lineal\n\n$$2x - 6 = 0.$$"
     sol = (
-        "2x - 6 = 0 → 2x = 6 → x = 6/2 = 3.\n\n"
-        f"Resultado numérico: x = {x:.3f}."
+        "Pasos:\n"
+        "1. \(2x - 6 = 0 \Rightarrow 2x = 6\)\n"
+        "2. \(x = 6/2 = 3\)\n\n"
+        f"Resultado numérico: \(x = {x:.3f}\)."
     )
     return enun, sol
 
@@ -55,7 +67,10 @@ def m_lineal_exercise() -> tuple[str, float, str, str]:
     variants = [(3, 9), (-4, 8), (7, -21), (5, -10), (-6, 18), (9, -27)]
     a, b = random.choice(variants)
     expected = -(b) / a
-    enun = f"Resuelve la ecuación {a}x {b:+d} = 0. Ingresa el valor de x."
+    enun = (
+        rf"Resuelve la ecuación $$\,{a}x {b:+d} = 0\,.$$ "
+        "Ingresa el valor de \(x\)."
+    )
     unit = ""
     hint = "Pasa el término independiente al otro lado de la igualdad y divide entre a."
     return enun, expected, unit, hint
@@ -66,14 +81,27 @@ def m_lineal_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def m_quad_explain() -> str:
-    """Explicación general de la ecuación cuadrática y la fórmula general."""
-    return (
-        "Ecuación cuadrática:\n"
-        "  a·x² + b·x + c = 0 (a ≠ 0).\n\n"
-        "Se resuelve con la fórmula general:\n"
-        "  x = [-b ± √(b² - 4ac)] / (2a).\n"
-        "Al término b² - 4ac se le llama discriminante D."
-    )
+    """Explicación general de la ecuación cuadrática y la fórmula general (con LaTeX)."""
+    return r"""
+Una **ecuación cuadrática** en una variable tiene la forma:
+
+$$a x^2 + b x + c = 0 \quad (a \neq 0)$$
+
+La solucionamos con la **fórmula general**:
+
+$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$
+
+Al término
+
+$$D = b^2 - 4ac$$
+
+se le llama **discriminante**.  
+Según su valor:
+
+- Si \(D > 0\): hay **dos raíces reales distintas**.
+- Si \(D = 0\): hay **una raíz real doble**.
+- Si \(D < 0\): no hay raíces reales (son complejas).
+"""
 
 
 def m_quad_example() -> tuple[str, str]:
@@ -82,12 +110,14 @@ def m_quad_example() -> tuple[str, str]:
     D = b * b - 4 * a * c
     x1 = (-b - math.sqrt(D)) / (2 * a)
     x2 = (-b + math.sqrt(D)) / (2 * a)
-    enun = "Ejemplo: resuelve x² - 3x + 2 = 0."
+    enun = "Ejemplo: resuelve la ecuación cuadrática\n\n$$x^2 - 3x + 2 = 0.$$"
     sol = (
-        "a = 1, b = -3, c = 2.\n"
-        "D = b² - 4ac = 9 - 8 = 1.\n"
-        "x = [3 ± √1]/2 → x1 = 1, x2 = 2.\n\n"
-        f"x1 = {x1:.3f}, x2 = {x2:.3f}."
+        "Datos: \(a = 1\), \(b = -3\), \(c = 2\).\n\n"
+        "1. Discriminante: \(D = b^2 - 4ac = 9 - 8 = 1\).\n"
+        "2. Fórmula general:\n"
+        r"   \(x = \frac{-b \pm \sqrt{D}}{2a} = \frac{3 \pm \sqrt{1}}{2}\)\n"
+        "3. Entonces: \(x_1 = 1\) y \(x_2 = 2\).\n\n"
+        f"Numéricamente: \(x_1 = {x1:.3f}\), \(x_2 = {x2:.3f}\)."
     )
     return enun, sol
 
@@ -96,7 +126,7 @@ def m_quad_exercise() -> tuple[str, float, str, str]:
     """
     Genera un ejercicio de ecuación cuadrática.
 
-    Se pide la raíz más pequeña (x_min). Todos los casos son con soluciones reales.
+    Se pide la raíz más pequeña \(x_{\min}\). Todos los casos son con soluciones reales.
     """
     presets = [(1, -5, 6), (2, 5, -3), (1, -4, 3), (1, -2, -8)]
     a, b, c = random.choice(presets)
@@ -108,10 +138,14 @@ def m_quad_exercise() -> tuple[str, float, str, str]:
 
     xs = (-b - math.sqrt(D)) / (2.0 * a)  # raíz más pequeña (signo menos)
     enun = (
-        f"Resuelve {a}x² {b:+d}x {c:+d} = 0 y escribe la raíz más pequeña (xₘᵢₙ)."
+        rf"Resuelve la ecuación $$\,{a}x^2 {b:+d}x {c:+d} = 0\,.$$ "
+        "Escribe la raíz más pequeña \(x_{\min}\)."
     )
     unit = ""
-    hint = "Aplica la fórmula general y quédate con la raíz que usa el signo menos."
+    hint = (
+        "Aplica la fórmula general \(x = [-b \pm \sqrt{b^2 - 4ac}]/(2a)\) "
+        "y quédate con la raíz que usa el signo menos."
+    )
     return enun, xs, unit, hint
 
 
@@ -120,23 +154,34 @@ def m_quad_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def m_pitagoras_explain() -> str:
-    """Explicación del teorema de Pitágoras en un triángulo rectángulo."""
-    return (
-        "En un triángulo rectángulo se cumple:\n"
-        "  c² = a² + b².\n\n"
-        "Si conoces los catetos a y b, la hipotenusa es:\n"
-        "  c = √(a² + b²)."
-    )
+    """Explicación del teorema de Pitágoras en un triángulo rectángulo (con LaTeX)."""
+    return r"""
+En un **triángulo rectángulo** se cumple el teorema de Pitágoras:
+
+$$c^2 = a^2 + b^2$$
+
+donde:
+- \(c\) es la **hipotenusa** (el lado opuesto al ángulo recto),
+- \(a\) y \(b\) son los **catetos**.
+
+Si conoces los catetos \(a\) y \(b\), la hipotenusa se calcula como:
+
+$$c = \sqrt{a^2 + b^2}$$
+"""
 
 
 def m_pitagoras_example() -> tuple[str, str]:
     """Ejemplo de cálculo de hipotenusa con catetos conocidos."""
     a, b = 6, 8
     c = math.sqrt(a * a + b * b)
-    enun = "Ejemplo: catetos 6 y 8. Calcula la hipotenusa."
+    enun = (
+        "Ejemplo: en un triángulo rectángulo los catetos valen "
+        "\(a = 6\) y \(b = 8\). Calcula la hipotenusa \(c\)."
+    )
     sol = (
-        "c = √(6² + 8²) = √(36 + 64) = √100 = 10.\n\n"
-        f"Resultado numérico: c = {c:.3f}."
+        r"Aplicamos Pitágoras: \(c = \sqrt{a^2 + b^2}\).\n"
+        r"\(c = \sqrt{6^2 + 8^2} = \sqrt{36 + 64} = \sqrt{100} = 10\).\n\n"
+        f"Resultado numérico: \(c = {c:.3f}\)."
     )
     return enun, sol
 
@@ -148,9 +193,12 @@ def m_pitagoras_exercise() -> tuple[str, float, str, str]:
     variants = [(3, 4), (5, 12), (7, 24), (9, 40), (8, 15), (12, 16)]
     a, b = random.choice(variants)
     c = math.sqrt(a * a + b * b)
-    enun = f"En un triángulo rectángulo, a = {a} y b = {b}. Calcula la hipotenusa c."
+    enun = (
+        rf"En un triángulo rectángulo, \(a = {a}\) y \(b = {b}\). "
+        "Calcula la hipotenusa \(c\) usando \(c = \sqrt{a^2 + b^2}\)."
+    )
     unit = ""
-    hint = "Eleva cada cateto al cuadrado, suma ambos resultados y saca la raíz cuadrada."
+    hint = "Eleva cada cateto al cuadrado, súmalos y extrae la raíz cuadrada."
     return enun, c, unit, hint
 
 
@@ -159,22 +207,33 @@ def m_pitagoras_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def m_slope_explain() -> str:
-    """Explicación de la pendiente de una recta a partir de dos puntos."""
-    return (
-        "Pendiente de una recta que pasa por (x₁, y₁) y (x₂, y₂):\n"
-        "  m = (y₂ - y₁) / (x₂ - x₁), con x₂ ≠ x₁."
-    )
+    """Explicación de la pendiente de una recta a partir de dos puntos (con LaTeX)."""
+    return r"""
+La **pendiente** \(m\) de una recta que pasa por dos puntos
+\((x_1, y_1)\) y \((x_2, y_2)\) se calcula como:
+
+$$m = \frac{y_2 - y_1}{x_2 - x_1} \quad \text{con } x_2 \neq x_1$$
+
+- El numerador \(y_2 - y_1\) representa el **cambio en \(y\)** (\(\Delta y\)).
+- El denominador \(x_2 - x_1\) representa el **cambio en \(x\)** (\(\Delta x\)).
+
+En resumen: la pendiente es “**subida entre avance**”.
+"""
 
 
 def m_slope_example() -> tuple[str, str]:
     """Ejemplo de cálculo de la pendiente a partir de dos puntos."""
     x1, y1, x2, y2 = 1, 2, 5, 10
     m = (y2 - y1) / (x2 - x1)
-    enun = "Ejemplo: pendiente de la recta que pasa por (1, 2) y (5, 10)."
+    enun = (
+        "Ejemplo: calcula la pendiente de la recta que pasa por "
+        f"\((x_1, y_1) = ({x1}, {y1})\) y \((x_2, y_2) = ({x2}, {y2})\)."
+    )
     sol = (
-        "Δy = 10 - 2 = 8, Δx = 5 - 1 = 4.\n"
-        "m = Δy / Δx = 8 / 4 = 2.\n\n"
-        f"Resultado numérico: m = {m:.3f}."
+        r"Primero calculamos los cambios: \(\Delta y = 10 - 2 = 8\), "
+        r"\(\Delta x = 5 - 1 = 4\).\n"
+        r"La pendiente es \(m = \Delta y / \Delta x = 8 / 4 = 2\).\n\n"
+        f"Resultado numérico: \(m = {m:.3f}\)."
     )
     return enun, sol
 
@@ -195,11 +254,12 @@ def m_slope_exercise() -> tuple[str, float, str, str]:
     x1, y1, x2, y2 = random.choice(point_sets)
     m = (y2 - y1) / (x2 - x1)
     enun = (
-        f"Calcula la pendiente m de la recta que pasa por "
-        f"({x1}, {y1}) y ({x2}, {y2})."
+        "Calcula la pendiente \(m\) de la recta que pasa por los puntos "
+        rf"\((x_1, y_1) = ({x1}, {y1})\) y \((x_2, y_2) = ({x2}, {y2})\).\n\n"
+        r"Recuerda: $$m = \frac{y_2 - y_1}{x_2 - x_1}.$$"
     )
     unit = ""
-    hint = "Resta primero las y, luego las x y divide: m = Δy / Δx."
+    hint = "Calcula primero Δy y Δx, luego divide: m = Δy / Δx."
     return enun, m, unit, hint
 
 
