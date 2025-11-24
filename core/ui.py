@@ -1,11 +1,29 @@
 # path: core/ui.py
+"""
+Capa de interfaz de Smart Form (estilos y componentes reutilizables).
+
+Aquí se define:
+- La configuración base de la página (título, icono, layout).
+- El CSS global con estética tipo "glass / Apple".
+- Componentes visuales reutilizables (hero, tarjetas de inicio, sidebar).
+"""
+
 from __future__ import annotations
 
 import streamlit as st
 
 
+# =========================================================
+#  CONFIGURACIÓN BASE DE PÁGINA
+# =========================================================
+
 def apply_base_config() -> None:
-    """Configura la página y aplica todos los estilos globales (tema claro tipo Apple)."""
+    """
+    Configura la página principal y aplica los estilos globales.
+
+    Esta función se llama una sola vez desde app.py, antes de dibujar
+    cualquier contenido.
+    """
     st.set_page_config(
         page_title="Smart Form",
         page_icon="🧪",
@@ -14,8 +32,12 @@ def apply_base_config() -> None:
     _inject_global_css()
 
 
+# =========================================================
+#  CSS GLOBAL (ESTÉTICA)
+# =========================================================
+
 def _inject_global_css() -> None:
-    """CSS global con estética tipo Apple / liquid glass en blanco."""
+    """Inyecta CSS personalizado para lograr la estética glass / limpia."""
     st.markdown(
         """
         <style>
@@ -24,34 +46,6 @@ def _inject_global_css() -> None:
         }
 
         /* --------- Fuente + layout base --------- */
-                /* --------- Inputs / sliders --------- */
-        .stNumberInput input {
-            background: rgba(255,255,255,0.9);
-            border-radius: 999px !important;
-            border: 1px solid rgba(209,213,219,0.9);
-            color: #111827;
-        }
-
-        .stNumberInput input:focus {
-            outline: none !important;
-            border-color: #007aff !important;
-            box-shadow: 0 0 0 1px rgba(0,122,255,0.7);
-        }
-
-        .stSlider > div > div > div > div {
-            background: linear-gradient(90deg,#3b82f6,#22c55e) !important;
-        }
-
-        /* Ocultar flechas +/- de los inputs numéricos */
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
-
         html, body, [class*="css"] {
             font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         }
@@ -233,6 +227,7 @@ def _inject_global_css() -> None:
             color: #111827;
         }
 
+        /* Segunda tarjeta (modo de estudio / ayuda) */
         .sf-card-ai {
             background: rgba(240,253,250,0.9);
             border-color: rgba(52,211,153,0.9);
@@ -289,6 +284,16 @@ def _inject_global_css() -> None:
             background: linear-gradient(90deg,#3b82f6,#22c55e) !important;
         }
 
+        /* Ocultar flechas +/- de los inputs numéricos para que parezcan campos de texto */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         /* --------- Expanders --------- */
         .streamlit-expander {
             border-radius: 20px !important;
@@ -329,16 +334,24 @@ def _inject_global_css() -> None:
     )
 
 
+# =========================================================
+#  COMPONENTES VISUALES REUTILIZABLES
+# =========================================================
+
 def render_hero() -> None:
-    """Hero de la parte superior (título + subtítulo + badge)."""
+    """
+    Hero de la parte superior (título + subtítulo + badge).
+
+    Resume en una sola tarjeta qué es Smart Form y cómo se usa.
+    """
     st.markdown(
         """
         <div class="sf-hero">
           <div class="sf-hero-inner">
             <div class="sf-hero-title">Smart Form</div>
             <div class="sf-hero-subtitle">
-              Practica Matemáticas, Física y Química con ejercicios interactivos,
-              pistas y el modo PRUEBATE para mezclar todo.
+              Practica Matemáticas, Física y Química con explicaciones en LaTeX,
+              ejemplos resueltos y el modo PRUEBATE para combinar todo en un examen rápido.
             </div>
             <div class="sf-hero-badge">
               <span>🧪</span>
@@ -352,18 +365,22 @@ def render_hero() -> None:
 
 
 def render_home_cards(tol_pct: float, q: int, helper_text: str) -> None:
-    """Cards del inicio con config actual y modo de estudio."""
+    """
+    Tarjetas del inicio con:
+    - Configuración actual de tolerancia y número de preguntas.
+    - Un resumen del modo de estudio / comportamiento de la app.
+    """
     st.markdown(
         f"""
         <div class="sf-grid">
           <div class="sf-card">
             <div class="sf-card-title">Configuración actual</div>
             <div class="sf-card-row">
-              <span class="sf-card-label">Tolerancia</span>
+              <span class="sf-card-label">Tolerancia numérica</span>
               <span class="sf-card-value">{tol_pct:.1f}%</span>
             </div>
             <div class="sf-card-row">
-              <span class="sf-card-label">Preguntas PRUEBATE</span>
+              <span class="sf-card-label">Preguntas en PRUEBATE</span>
               <span class="sf-card-value">{q}</span>
             </div>
           </div>
@@ -381,18 +398,18 @@ def render_sidebar(ai_on: bool, on_clear_history) -> None:
     """
     Sidebar con título y botón para borrar historial.
 
-    El parámetro `ai_on` se mantiene por compatibilidad,
+    El parámetro `ai_on` se mantiene por compatibilidad con app.py,
     pero ya no se muestra nada relacionado con IA.
     """
     st.markdown("### 🧪 Smart Form")
     st.caption("Formulario interactivo para Matemáticas, Física y Química.")
     st.markdown("---")
 
-    # Pequeño mensaje de estado general (sin mencionar IA)
+    # Mensaje simple de estado general (sin mencionar IA ni modelos)
     if ai_on:
-        st.success("Todo listo: contenido y ejercicios cargados.")
+        st.success("Contenido de práctica cargado correctamente.")
     else:
-        st.info("Modo práctica listo. No necesitas conexión a servicios externos.")
+        st.info("Modo práctica listo. No dependes de servicios externos.")
 
     st.markdown("---")
 
