@@ -24,6 +24,34 @@ def _inject_global_css() -> None:
         }
 
         /* --------- Fuente + layout base --------- */
+                /* --------- Inputs / sliders --------- */
+        .stNumberInput input {
+            background: rgba(255,255,255,0.9);
+            border-radius: 999px !important;
+            border: 1px solid rgba(209,213,219,0.9);
+            color: #111827;
+        }
+
+        .stNumberInput input:focus {
+            outline: none !important;
+            border-color: #007aff !important;
+            box-shadow: 0 0 0 1px rgba(0,122,255,0.7);
+        }
+
+        .stSlider > div > div > div > div {
+            background: linear-gradient(90deg,#3b82f6,#22c55e) !important;
+        }
+
+        /* Ocultar flechas +/- de los inputs numéricos */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         html, body, [class*="css"] {
             font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         }
