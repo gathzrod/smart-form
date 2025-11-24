@@ -139,8 +139,28 @@ def render_area_tab(
 
     # 4) Bloque de ejercicio interactivo autocorregible
     with st.expander("📝 Ejercicio interactivo", expanded=False):
-        # Se genera un ejercicio nuevo cada vez que se carga la interfaz
-        enun_exe, expected, unit, hint = topic.exercise()
+        # --- NUEVO: fijamos el ejercicio en session_state para que no cambie solo ---
+        ex_key = f"{key_prefix}_exercise_data"
+        ex_data = st.session_state.get(ex_key)
+
+        # Si no hay ejercicio guardado o cambió el tema, generamos uno nuevo
+        if ex_data is None or ex_data.get("tema") != topic.name:
+            enun_exe, expected, unit, hint = topic.exercise()
+            ex_data = {
+                "tema": topic.name,
+                "enunciado": enun_exe,
+                "correcto": float(expected),
+                "unit": unit,
+                "hint": hint,
+            }
+            st.session_state[ex_key] = ex_data
+
+        # Usamos siempre los datos guardados en session_state
+        enun_exe = ex_data["enunciado"]
+        expected = ex_data["correcto"]
+        unit = ex_data["unit"]
+        hint = ex_data["hint"]
+
         st.write(enun_exe)
 
         # Input numérico de respuesta del alumno
@@ -159,7 +179,6 @@ def render_area_tab(
             if st.button(f"Corregir ({area_label})", key=f"{key_prefix}_check"):
                 ok = within_tol(expected, float(user), st.session_state.tol_pct)
 
-                # Se registra el intento en el historial
                 add_history(
                     area=area_label,
                     tema=topic.name,
@@ -169,14 +188,13 @@ def render_area_tab(
                     acierto=ok,
                 )
 
-                # Feedback visual al estudiante
                 if ok:
                     st.success(f"CORRECTO ✅ — Solución: {expected:.6f} {unit}")
                 else:
                     st.error(f"INCORRECTO ❌ — Solución: {expected:.6f} {unit}")
                     st.caption("Pista: " + hint)
 
-        # Botón con una guía general de cómo resolver este tipo de ejercicios
+        # Botón con guía general de cómo resolver este tipo de ejercicios
         with b2:
             if st.button(
                 "¿Cómo abordar este tipo de ejercicio?",
@@ -191,6 +209,7 @@ def render_area_tab(
                     "explicación y el ejemplo resuelto del tema."
                 )
                 st.info(mensaje)
+
 
 
 # =========================================================
