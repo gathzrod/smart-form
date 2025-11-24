@@ -1,4 +1,13 @@
 # path: core/topics_math.py
+"""
+Definición de los temas de Matemáticas para Smart Form.
+
+Cada tema se modela como un objeto Topic (ver core.utils) con:
+- Una explicación teórica
+- Un ejemplo resuelto
+- Un generador de ejercicios interactivos
+"""
+
 from __future__ import annotations
 
 import math
@@ -8,20 +17,23 @@ from typing import List
 from .utils import Topic
 
 
-# ---------- M1: Ecuación lineal (ax + b = 0) ----------
-
+# =========================================================
+#  M1: Ecuación lineal (ax + b = 0)
+# =========================================================
 
 def m_lineal_explain() -> str:
+    """Devuelve una explicación breve de la ecuación lineal en una variable."""
     return (
         "Ecuación lineal en una variable:\n"
         "  a·x + b = 0 con a ≠ 0.\n\n"
         "La idea es dejar a x sola:\n"
         "  a·x + b = 0 → a·x = -b → x = -b / a.\n"
-        "Ojo con los signos y con no dividir entre cero."
+        "Ten cuidado con los signos y recuerda que no se puede dividir entre cero."
     )
 
 
 def m_lineal_example() -> tuple[str, str]:
+    """Ejemplo resuelto paso a paso de una ecuación lineal sencilla."""
     a, b = 2, -6
     x = -(b) / a
     enun = "Ejemplo: resuelve 2x - 6 = 0."
@@ -33,19 +45,28 @@ def m_lineal_example() -> tuple[str, str]:
 
 
 def m_lineal_exercise() -> tuple[str, float, str, str]:
+    """
+    Genera un ejercicio de ecuación lineal.
+
+    Devuelve:
+        enunciado, valor_correcto, unidad, pista
+    """
+    # a nunca es 0 en estas variantes, así evitamos divisiones inválidas.
     variants = [(3, 9), (-4, 8), (7, -21), (5, -10), (-6, 18), (9, -27)]
     a, b = random.choice(variants)
     expected = -(b) / a
     enun = f"Resuelve la ecuación {a}x {b:+d} = 0. Ingresa el valor de x."
     unit = ""
-    hint = "Pasa el término independiente al otro lado y divide entre a."
+    hint = "Pasa el término independiente al otro lado de la igualdad y divide entre a."
     return enun, expected, unit, hint
 
 
-# ---------- M2: Ecuación cuadrática ----------
-
+# =========================================================
+#  M2: Ecuación cuadrática
+# =========================================================
 
 def m_quad_explain() -> str:
+    """Explicación general de la ecuación cuadrática y la fórmula general."""
     return (
         "Ecuación cuadrática:\n"
         "  a·x² + b·x + c = 0 (a ≠ 0).\n\n"
@@ -56,6 +77,7 @@ def m_quad_explain() -> str:
 
 
 def m_quad_example() -> tuple[str, str]:
+    """Ejemplo resuelto detallado de una ecuación cuadrática sencilla."""
     a, b, c = 1, -3, 2
     D = b * b - 4 * a * c
     x1 = (-b - math.sqrt(D)) / (2 * a)
@@ -71,24 +93,34 @@ def m_quad_example() -> tuple[str, str]:
 
 
 def m_quad_exercise() -> tuple[str, float, str, str]:
+    """
+    Genera un ejercicio de ecuación cuadrática.
+
+    Se pide la raíz más pequeña (x_min). Todos los casos son con soluciones reales.
+    """
     presets = [(1, -5, 6), (2, 5, -3), (1, -4, 3), (1, -2, -8)]
     a, b, c = random.choice(presets)
     D = float(b * b - 4 * a * c)
+
+    # Por seguridad, acotamos D a cero si por redondeos quedara ligeramente negativo.
     if D < 0:
         D = 0.0
-    xs = (-b - math.sqrt(D)) / (2.0 * a)
+
+    xs = (-b - math.sqrt(D)) / (2.0 * a)  # raíz más pequeña (signo menos)
     enun = (
         f"Resuelve {a}x² {b:+d}x {c:+d} = 0 y escribe la raíz más pequeña (xₘᵢₙ)."
     )
     unit = ""
-    hint = "Usa la fórmula general y quédate con la raíz del signo menos."
+    hint = "Aplica la fórmula general y quédate con la raíz que usa el signo menos."
     return enun, xs, unit, hint
 
 
-# ---------- M3: Pitágoras (c² = a² + b²) ----------
-
+# =========================================================
+#  M3: Teorema de Pitágoras (c² = a² + b²)
+# =========================================================
 
 def m_pitagoras_explain() -> str:
+    """Explicación del teorema de Pitágoras en un triángulo rectángulo."""
     return (
         "En un triángulo rectángulo se cumple:\n"
         "  c² = a² + b².\n\n"
@@ -98,6 +130,7 @@ def m_pitagoras_explain() -> str:
 
 
 def m_pitagoras_example() -> tuple[str, str]:
+    """Ejemplo de cálculo de hipotenusa con catetos conocidos."""
     a, b = 6, 8
     c = math.sqrt(a * a + b * b)
     enun = "Ejemplo: catetos 6 y 8. Calcula la hipotenusa."
@@ -109,19 +142,24 @@ def m_pitagoras_example() -> tuple[str, str]:
 
 
 def m_pitagoras_exercise() -> tuple[str, float, str, str]:
+    """
+    Genera un ejercicio de Pitágoras pidiendo la hipotenusa a partir de los catetos.
+    """
     variants = [(3, 4), (5, 12), (7, 24), (9, 40), (8, 15), (12, 16)]
     a, b = random.choice(variants)
     c = math.sqrt(a * a + b * b)
     enun = f"En un triángulo rectángulo, a = {a} y b = {b}. Calcula la hipotenusa c."
     unit = ""
-    hint = "Eleva cada cateto al cuadrado, suma y saca la raíz cuadrada."
+    hint = "Eleva cada cateto al cuadrado, suma ambos resultados y saca la raíz cuadrada."
     return enun, c, unit, hint
 
 
-# ---------- M4: Pendiente entre dos puntos ----------
-
+# =========================================================
+#  M4: Pendiente entre dos puntos
+# =========================================================
 
 def m_slope_explain() -> str:
+    """Explicación de la pendiente de una recta a partir de dos puntos."""
     return (
         "Pendiente de una recta que pasa por (x₁, y₁) y (x₂, y₂):\n"
         "  m = (y₂ - y₁) / (x₂ - x₁), con x₂ ≠ x₁."
@@ -129,6 +167,7 @@ def m_slope_explain() -> str:
 
 
 def m_slope_example() -> tuple[str, str]:
+    """Ejemplo de cálculo de la pendiente a partir de dos puntos."""
     x1, y1, x2, y2 = 1, 2, 5, 10
     m = (y2 - y1) / (x2 - x1)
     enun = "Ejemplo: pendiente de la recta que pasa por (1, 2) y (5, 10)."
@@ -141,8 +180,19 @@ def m_slope_example() -> tuple[str, str]:
 
 
 def m_slope_exercise() -> tuple[str, float, str, str]:
-    sets = [(0, 0, 4, 6), (-2, 3, 1, 12), (2, -1, 8, 5), (-3, -2, 4, 7), (1, 5, 7, 17)]
-    x1, y1, x2, y2 = random.choice(sets)
+    """
+    Genera un ejercicio de pendiente entre dos puntos.
+
+    Las parejas de puntos se eligen de forma que x₂ ≠ x₁ para evitar divisiones por cero.
+    """
+    point_sets = [
+        (0, 0, 4, 6),
+        (-2, 3, 1, 12),
+        (2, -1, 8, 5),
+        (-3, -2, 4, 7),
+        (1, 5, 7, 17),
+    ]
+    x1, y1, x2, y2 = random.choice(point_sets)
     m = (y2 - y1) / (x2 - x1)
     enun = (
         f"Calcula la pendiente m de la recta que pasa por "
@@ -153,7 +203,9 @@ def m_slope_exercise() -> tuple[str, float, str, str]:
     return enun, m, unit, hint
 
 
-# ---------- Lista de temas de Matemáticas ----------
+# =========================================================
+#  Lista de temas de Matemáticas
+# =========================================================
 
 MATH_TOPICS: List[Topic] = [
     Topic(
