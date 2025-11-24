@@ -131,7 +131,7 @@ def f_ohm_explain() -> str:
     return r"""
 La **ley de Ohm** relaciona voltaje, corriente y resistencia eléctrica:
 
-$$V = I R$$
+$$V = I * R$$
 
 donde:
 - $V$ es el voltaje (en volts, V),
