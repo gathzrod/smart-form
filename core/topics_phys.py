@@ -28,14 +28,10 @@ La **velocidad media** relaciona el desplazamiento recorrido con el tiempo emple
 $$v = \frac{d}{t}$$
 
 donde:
-- $d$ es el desplazamiento (en metros, $\\text{m}$),
-- $t$ es el tiempo (en segundos, $\\text{s}$).
+- $d$ es el desplazamiento (en metros, m),
+- $t$ es el tiempo (en segundos, s).
 
-La velocidad media se expresa normalmente en $\\text{m/s}$.
-
-Es importante distinguir entre:
-- **distancia total recorrida**, y
-- **desplazamiento** (cambio neto de posición entre el punto inicial y el final).
+La velocidad media se expresa normalmente en m/s.
 """
 
 
@@ -62,13 +58,12 @@ def f_vel_media_exercise() -> tuple[str, float, str, str]:
     Devuelve:
         enunciado, valor_correcto, unidad, pista
     """
-    # Algunos ejemplos con resultados enteros y otros fraccionarios.
     pairs = [(100, 20), (250, 50), (300, 30), (420, 21), (180, 12), (125, 25)]
     d, t = random.choice(pairs)
     expected = d / t
     enun = (
         f"Un móvil se desplaza $d = {d}\\,\\text{{m}}$ en "
-        f"$t = {t}\\,\\text{{s}}$. Calcula la velocidad media $v$ en $\\text{{m/s}}$."
+        f"$t = {t}\\,\\text{{s}}$. Calcula la velocidad media $v$ en m/s."
     )
     unit = "m/s"
     hint = "Escribe v = d/t y sustituye usando metros y segundos."
@@ -87,10 +82,10 @@ La **energía cinética** es la energía asociada al movimiento de un objeto:
 $$E_c = \frac{1}{2} m v^2$$
 
 donde:
-- $m$ es la masa (en kilogramos, $\\text{kg}$),
-- $v$ es la rapidez (en $\\text{m/s}$).
+- $m$ es la masa (en kilogramos, kg),
+- $v$ es la rapidez (en m/s).
 
-La energía cinética se mide en **joules** ($\\text{J}$).
+La energía cinética se mide en **joules** (J).
 
 Si aumenta la masa o la rapidez, la energía cinética también aumenta.
 """
@@ -120,7 +115,7 @@ def f_ec_exercise() -> tuple[str, float, str, str]:
     expected = 0.5 * m * v * v
     enun = (
         f"Un objeto de masa $m = {m:.1f}\\,\\text{{kg}}$ se mueve a "
-        f"$v = {v:.1f}\\,\\text{{m/s}}$. Calcula la energía cinética $E_c$ en $\\text{{J}}$."
+        f"$v = {v:.1f}\\,\\text{{m/s}}$. Calcula la energía cinética $E_c$ en J."
     )
     unit = "J"
     hint = "Eleva la velocidad al cuadrado y luego multiplica por (1/2)·m."
@@ -136,11 +131,11 @@ def f_ohm_explain() -> str:
     return r"""
 La **ley de Ohm** relaciona voltaje, corriente y resistencia eléctrica:
 
-$$V = I \\cdot R$$
+$$V = I R$$
 
 donde:
-- $V$ es el voltaje (en volts, $\\text{V}$),
-- $I$ es la corriente (en amperes, $\\text{A}$),
+- $V$ es el voltaje (en volts, V),
+- $I$ es la corriente (en amperes, A),
 - $R$ es la resistencia (en ohms, $\\Omega$).
 
 Formas despejadas útiles:
@@ -222,10 +217,10 @@ donde:
 - $t$ es el tiempo transcurrido.
 
 Si usamos el SI:
-- velocidades en $\\text{m/s}$,
-- aceleración en $\\text{m/s}^2$,
-- tiempo en segundos ($\\text{s}$),
-entonces $v$ también queda en $\\text{m/s}$.
+- velocidades en m/s,
+- aceleración en m/s²,
+- tiempo en segundos (s),
+entonces $v$ también queda en m/s.
 """
 
 
