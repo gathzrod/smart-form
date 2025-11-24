@@ -323,8 +323,8 @@ def render_hero() -> None:
     )
 
 
-def render_home_cards(tol_pct: float, q: int, ai_text: str) -> None:
-    """Cards del inicio con config actual y estado de IA."""
+def render_home_cards(tol_pct: float, q: int, helper_text: str) -> None:
+    """Cards del inicio con config actual y modo de estudio."""
     st.markdown(
         f"""
         <div class="sf-grid">
@@ -340,8 +340,8 @@ def render_home_cards(tol_pct: float, q: int, ai_text: str) -> None:
             </div>
           </div>
           <div class="sf-card sf-card-ai">
-            <div class="sf-card-title">Estado de IA</div>
-            <p class="sf-card-ai-text">{ai_text}</p>
+            <div class="sf-card-title">Modo de estudio</div>
+            <p class="sf-card-ai-text">{helper_text}</p>
           </div>
         </div>
         """,
@@ -350,15 +350,21 @@ def render_home_cards(tol_pct: float, q: int, ai_text: str) -> None:
 
 
 def render_sidebar(ai_on: bool, on_clear_history) -> None:
-    """Sidebar con título, estado de IA y botón para borrar historial."""
+    """
+    Sidebar con título y botón para borrar historial.
+
+    El parámetro `ai_on` se mantiene por compatibilidad,
+    pero ya no se muestra nada relacionado con IA.
+    """
     st.markdown("### 🧪 Smart Form")
     st.caption("Formulario interactivo para Matemáticas, Física y Química.")
     st.markdown("---")
 
+    # Pequeño mensaje de estado general (sin mencionar IA)
     if ai_on:
-        st.success("IA: activada (modo mixto local / modelos externos).")
+        st.success("Todo listo: contenido y ejercicios cargados.")
     else:
-        st.info("IA: solo modo local (sin modelos externos).")
+        st.info("Modo práctica listo. No necesitas conexión a servicios externos.")
 
     st.markdown("---")
 
