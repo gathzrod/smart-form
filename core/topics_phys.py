@@ -136,11 +136,7 @@ $$V = I R$$
 donde:
 - $V$ es el voltaje (en volts, V),
 - $I$ es la corriente (en amperes, A),
-- $R$ es la resistencia (en ohms, $\\Omega$).
-
-Formas despejadas útiles:
-
-$$I = \\frac{V}{R}, \qquad R = \\frac{V}{I}.$$
+- $R$ es la resistencia (en ohms).
 """
 
 
