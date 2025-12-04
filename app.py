@@ -1,6 +1,6 @@
 # path: app.py
 """
-Aplicación principal de Smart Form.
+Script principal de SmartForms.
 
 App hecha con Streamlit para practicar Matemáticas, Física y Química con:
 - Explicaciones teóricas usando notación LaTeX
@@ -70,7 +70,7 @@ TOPIC_DIFFICULTY = {
     ("Matemáticas", "Ecuación cuadrática"): "Intermedio",
     ("Matemáticas", "Pitágoras (c² = a² + b²)"): "Básico",
     ("Matemáticas", "Pendiente entre puntos"): "Intermedio",
-    # Física y Química se pueden completar cuando revisemos sus topics.
+    
     # Si un tema no aparece aquí, se considerará como "Intermedio".
 }
 
