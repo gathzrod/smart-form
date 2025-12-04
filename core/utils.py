@@ -3,12 +3,12 @@
 Utilidades centrales de Smart Form.
 
 Este módulo define:
-- La estructura Topic (representa un tema con sus funciones asociadas)
-- El manejo del historial en session_state
-- La evaluación numérica con tolerancia relativa
-- La exportación del historial a CSV
+- La estructura Topic (representa un tema con sus funciones asociadas).
+- El manejo del historial en session_state.
+- La evaluación numérica con tolerancia relativa.
+- La exportación del historial a CSV.
 
-Estas funciones son utilizadas tanto en los ejercicios interactivos
+Estas funciones se usan tanto en los ejercicios interactivos
 como en el modo de examen PRUEBATE.
 """
 
@@ -32,18 +32,20 @@ class Topic:
     """
     Representa un tema académico (Matemáticas, Física, Química).
 
-    Cada tema contiene:
-    - Una explicación teórica (explain)
-    - Un ejemplo resuelto (example)
-    - Un generador de ejercicios (exercise)
+    En lugar de tener todo el código mezclado, cada tema se modela
+    como un objeto Topic que agrupa tres funciones:
 
-    Las funciones deben devolver siempre:
-      explain()  -> str
-      example()  -> (str, str)
-      exercise() -> (enunciado: str,
-                      valor_correcto: float,
-                      unidad: str,
-                      pista: str)
+    - explain(): devuelve un texto con la explicación teórica.
+    - example(): devuelve el enunciado y la solución de un ejemplo resuelto.
+    - exercise(): genera un nuevo ejercicio aleatorio del tema y devuelve:
+
+        (enunciado: str,
+         valor_correcto: float,
+         unidad: str,
+         pista: str)
+
+    Esto permite que la lógica de Smart Form (app.py) trate todos los temas
+    de forma uniforme: sólo necesita llamar a explain(), example() y exercise().
     """
     area: str
     name: str
@@ -58,24 +60,38 @@ class Topic:
 
 def ensure_history_initialized() -> None:
     """
-    Garantiza que st.session_state tenga un contenedor `history`
-    para almacenar los intentos de ejercicios.
+    Asegura que st.session_state tenga un contenedor `history`.
+
+    Se usa como paso previo en cualquier operación de historial
+    (agregar, limpiar, convertir a DataFrame) para evitar errores
+    si el usuario aún no ha contestado nada.
     """
     if "history" not in st.session_state:
         st.session_state.history: List[Dict] = []
 
 
-def add_history(area: str, tema: str, tipo: str,
-                correcto: float, usuario: float, acierto: bool) -> None:
+def add_history(
+    area: str,
+    tema: str,
+    tipo: str,
+    correcto: float,
+    usuario: float,
+    acierto: bool,
+) -> None:
     """
     Agrega un intento al historial.
 
     Cada registro guarda:
-    - fecha/hora del intento
-    - área y tema
-    - tipo de ejercicio (normal o PRUEBATE)
-    - valor correcto y respuesta del usuario
-    - si fue acierto o no
+    - timestamp: fecha/hora del intento
+    - area: área a la que pertenece el tema (Matemáticas, Física, Química)
+    - tema: nombre del tema específico
+    - tipo: "Ejercicio" normal o "PRUEBATE"
+    - correcto: valor correcto del ejercicio (redondeado a 6 decimales)
+    - usuario: respuesta del usuario (redondeada a 6 decimales)
+    - resultado: "ACIERTO" o "ERROR" según la evaluación
+
+    Este historial después se convierte en DataFrame para visualizarlo
+    y exportarlo desde la pestaña Historial.
     """
     ensure_history_initialized()
     st.session_state.history.append(
@@ -93,10 +109,11 @@ def add_history(area: str, tema: str, tipo: str,
 
 def get_history_df() -> pd.DataFrame:
     """
-    Devuelve el historial como DataFrame.
+    Devuelve el historial como DataFrame de pandas.
 
-    Si no hay registros aún, se devuelve un DataFrame vacío con
-    las columnas correctas para evitar errores en Streamlit.
+    Si no hay registros aún, devuelve un DataFrame vacío pero con
+    las columnas definidas. Eso evita errores cuando se lo pasamos
+    a st.dataframe o cuando intentamos exportar aunque no haya datos.
     """
     ensure_history_initialized()
 
@@ -117,15 +134,22 @@ def get_history_df() -> pd.DataFrame:
 
 
 def clear_history() -> None:
-    """Elimina todo el historial almacenado en session_state."""
+    """
+    Elimina todo el historial almacenado en session_state.
+
+    Se usa cuando el usuario pulsa el botón "Borrar historial"
+    en la barra lateral.
+    """
     ensure_history_initialized()
     st.session_state.history.clear()
 
 
 def history_to_csv(df: pd.DataFrame) -> bytes:
     """
-    Convierte un DataFrame de historial a formato CSV (bytes)
-    para descarga mediante download_button.
+    Convierte un DataFrame de historial a formato CSV (bytes).
+
+    Este helper se usa directamente en la pestaña Historial
+    para alimentar el st.download_button.
     """
     buf = io.StringIO()
     df.to_csv(buf, index=False)
@@ -138,14 +162,20 @@ def history_to_csv(df: pd.DataFrame) -> bytes:
 
 def within_tol(expected: float, user: float, tol_pct: float) -> bool:
     """
-    Compara el resultado del usuario contra el valor correcto usando tolerancia.
+    Compara la respuesta del usuario contra el valor correcto usando tolerancia.
 
-    La tolerancia es relativa, pero con un mínimo absoluto para evitar
-    problemas cuando expected es muy pequeño o cero.
+    La tolerancia es relativa al tamaño del resultado esperado, pero con
+    un mínimo absoluto para no tener problemas cuando expected es muy
+    pequeño (o incluso cero):
 
         tol = max(|expected| * tol_pct, 1e-6)
 
-    Retorna True si |user - expected| <= tol.
+    Se considera correcta la respuesta si:
+
+        |user - expected| <= tol
+
+    Esto permite, por ejemplo, aceptar 9.81 y 9.8 como equivalentes
+    cuando la tolerancia está configurada lo suficientemente alta.
     """
     tol = max(abs(expected) * tol_pct, 1e-6)
     return abs(user - expected) <= tol
