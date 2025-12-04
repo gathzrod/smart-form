@@ -4,7 +4,7 @@ Capa de interfaz de Smart Form (estilos y componentes reutilizables).
 
 Aquí se define:
 - La configuración base de la página (título, icono, layout).
-- El CSS global con estética tipo "glass / Apple".
+- El CSS global con una estética limpia, moderna y con efecto "glass".
 - Componentes visuales reutilizables (hero, tarjetas de inicio, sidebar).
 """
 
@@ -21,8 +21,9 @@ def apply_base_config() -> None:
     """
     Configura la página principal y aplica los estilos globales.
 
-    Esta función se llama una sola vez desde app.py, antes de dibujar
-    cualquier contenido.
+    Se llama una sola vez desde app.py, antes de dibujar contenido:
+    - Define título, icono y layout de Streamlit.
+    - Inyecta el CSS que da la apariencia general de Smart Form.
     """
     st.set_page_config(
         page_title="Smart Form",
@@ -37,7 +38,15 @@ def apply_base_config() -> None:
 # =========================================================
 
 def _inject_global_css() -> None:
-    """Inyecta CSS personalizado para lograr la estética glass / limpia."""
+    """
+    Inyecta CSS personalizado para la app.
+
+    El objetivo es dar una interfaz:
+    - con fondo suave y colores claros,
+    - tarjetas con efecto de vidrio difuminado ("glass"),
+    - botones redondeados y transiciones más fluidas,
+    - elementos de entrada más agradables de usar.
+    """
     st.markdown(
         """
         <style>
@@ -66,7 +75,7 @@ def _inject_global_css() -> None:
             color: #111827;
         }
 
-        /* --------- Sidebar (glass) --------- */
+        /* --------- Sidebar con efecto glass --------- */
         section[data-testid="stSidebar"] {
             background: rgba(255,255,255,0.70);
             backdrop-filter: blur(26px);
@@ -143,7 +152,7 @@ def _inject_global_css() -> None:
             font-size: 1rem;
         }
 
-        /* --------- Tabs tipo iOS segmentados --------- */
+        /* --------- Tabs segmentadas (estilo móvil) --------- */
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.6rem;
             padding-bottom: 0.4rem;
@@ -342,7 +351,8 @@ def render_hero() -> None:
     """
     Hero de la parte superior (título + subtítulo + badge).
 
-    Resume en una sola tarjeta qué es Smart Form y cómo se usa.
+    Resume en una sola tarjeta qué es Smart Form y cómo se usa,
+    para que el usuario entienda rápido la idea de la app.
     """
     st.markdown(
         """
@@ -369,6 +379,11 @@ def render_home_cards(tol_pct: float, q: int, helper_text: str) -> None:
     Tarjetas del inicio con:
     - Configuración actual de tolerancia y número de preguntas.
     - Un resumen del modo de estudio / comportamiento de la app.
+
+    Recibe:
+    - tol_pct: tolerancia numérica en porcentaje (ya formateada en app.py)
+    - q: número de preguntas del modo PRUEBATE
+    - helper_text: texto corto que explica cómo se usa esa configuración
     """
     st.markdown(
         f"""
@@ -398,14 +413,15 @@ def render_sidebar(ai_on: bool, on_clear_history) -> None:
     """
     Sidebar con título y botón para borrar historial.
 
-    El parámetro `ai_on` se mantiene por compatibilidad con app.py,
-    pero ya no se muestra nada relacionado con IA.
+    Parámetros:
+    - ai_on: bandera que usamos para mostrar un mensaje de estado simple.
+    - on_clear_history: función que se llama cuando se presiona "Borrar historial".
     """
     st.markdown("### 🧪 Smart Form")
     st.caption("Formulario interactivo para Matemáticas, Física y Química.")
     st.markdown("---")
 
-    # Mensaje simple de estado general (sin mencionar IA ni modelos)
+    # Mensaje simple de estado general (sin mencionar IA ni modelos externos)
     if ai_on:
         st.success("Contenido de práctica cargado correctamente.")
     else:
