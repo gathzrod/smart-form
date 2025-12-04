@@ -2,10 +2,13 @@
 """
 Temas de Matemáticas para Smart Form.
 
-Cada tema se modela como un objeto Topic (ver core.utils) con:
-- Explicación teórica (con notación LaTeX)
-- Ejemplo resuelto
-- Generador de ejercicios interactivos
+Cada tema se modela como un objeto Topic (ver core.utils) con tres bloques:
+- Explicación teórica (con notación LaTeX).
+- Ejemplo resuelto paso a paso.
+- Generador de ejercicios interactivos con solución numérica.
+
+De esta forma, la app puede tratar todos los temas de forma uniforme:
+siempre llama a explain(), example() y exercise().
 """
 
 from __future__ import annotations
@@ -22,11 +25,18 @@ from .utils import Topic
 # =========================================================
 
 def m_lineal_explain() -> str:
-    """Explicación de la ecuación lineal en una variable (usa LaTeX)."""
+    """
+    Explicación de la ecuación lineal en una variable.
+
+    Se presenta la forma general ax + b = 0 y el despeje de x
+    usando notación LaTeX, resaltando el cuidado con los signos
+    y el hecho de que a no puede ser cero.
+    """
     return r"""
 Una **ecuación lineal** en una variable tiene la forma
 
 $$a x + b = 0, \quad a \neq 0.$$
+
 
 Para despejar $x$:
 
@@ -38,13 +48,20 @@ $$a x = -b$$
 
 $$x = \frac{-b}{a}.$$
 
+
 Hay que tener cuidado con los signos y recordar que **no se puede dividir entre cero**.
 """
 
 
 def m_lineal_example() -> tuple[str, str]:
-    """Ejemplo resuelto de una ecuación lineal sencilla."""
+    """
+    Ejemplo resuelto de una ecuación lineal sencilla.
+
+    Usamos un caso concreto (2x - 6 = 0) para mostrar el procedimiento
+    paso a paso y el resultado numérico formateado.
+    """
     a, b = 2, -6
+    # x = -b / a para la ecuación ax + b = 0
     x = -(b) / a
     enun = r"Ejemplo: resuelve la ecuación lineal $$2x - 6 = 0.$$"
     sol = (
@@ -58,11 +75,16 @@ def m_lineal_example() -> tuple[str, str]:
 
 def m_lineal_exercise() -> tuple[str, float, str, str]:
     """
-    Genera un ejercicio de ecuación lineal.
+    Genera un ejercicio de ecuación lineal del tipo ax + b = 0.
+
+    Elegimos aleatoriamente (a, b) de una lista de variantes sencillas
+    y calculamos la solución x = -b/a. Siempre devolvemos además una pista
+    de cómo empezar el procedimiento.
 
     Devuelve:
-        enunciado, valor_correcto, unidad, pista
+        enunciado (str), valor_correcto (float), unidad (str), pista (str)
     """
+    # Valores de a y b que producen soluciones simples pero variadas.
     variants = [(3, 9), (-4, 8), (7, -21), (5, -10), (-6, 18), (9, -27)]
     a, b = random.choice(variants)
     expected = -(b) / a
@@ -70,7 +92,7 @@ def m_lineal_exercise() -> tuple[str, float, str, str]:
         rf"Resuelve la ecuación $$ {a}x {b:+d} = 0 $$. "
         "Escribe el valor de $x$."
     )
-    unit = ""
+    unit = ""  # sin unidad específica, es un número puro
     hint = "Pasa el término independiente al otro lado y divide entre el coeficiente de x."
     return enun, expected, unit, hint
 
@@ -80,15 +102,22 @@ def m_lineal_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def m_quad_explain() -> str:
-    """Explicación de la ecuación cuadrática y la fórmula general (con LaTeX)."""
+    """
+    Explicación de la ecuación cuadrática y la fórmula general.
+
+    Se introduce el discriminante D = b^2 - 4ac y se interpreta
+    su valor para saber cuántas soluciones reales tiene la ecuación.
+    """
     return r"""
 Una **ecuación cuadrática** tiene la forma
 
 $$a x^2 + b x + c = 0, \quad a \neq 0.$$
 
+
 La solucionamos con la **fórmula general**:
 
 $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
+
 
 El término
 
@@ -103,7 +132,12 @@ se llama **discriminante**. Según su valor:
 
 
 def m_quad_example() -> tuple[str, str]:
-    """Ejemplo resuelto de una ecuación cuadrática sencilla."""
+    """
+    Ejemplo resuelto de una ecuación cuadrática sencilla.
+
+    Usamos x² - 3x + 2 = 0, calculamos el discriminante y
+    aplicamos la fórmula general mostrando las dos raíces.
+    """
     a, b, c = 1, -3, 2
     D = b * b - 4 * a * c
     x1 = (-b - math.sqrt(D)) / (2 * a)
@@ -124,7 +158,12 @@ def m_quad_exercise() -> tuple[str, float, str, str]:
     """
     Genera un ejercicio de ecuación cuadrática.
 
-    Se pide la raíz más pequeña $x_{\\min}$. Todos los casos tienen soluciones reales.
+    Siempre usamos coeficientes que producen raíces reales.
+    Se pide al alumno la raíz más pequeña x_min para forzar
+    a interpretar ambas soluciones.
+
+    Devuelve:
+        enunciado, raíz_más_pequeña, unidad, pista.
     """
     # Estos coeficientes producen raíces reales y no triviales (no todas enteras).
     presets = [
@@ -135,6 +174,8 @@ def m_quad_exercise() -> tuple[str, float, str, str]:
     ]
     a, b, c = random.choice(presets)
     D = float(b * b - 4 * a * c)
+    # Por seguridad, si D saliera negativo (no debería con estos presets),
+    # lo ajustamos a 0 para evitar errores numéricos.
     if D < 0:
         D = 0.0
 
@@ -159,7 +200,12 @@ def m_quad_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def m_pitagoras_explain() -> str:
-    """Explicación del teorema de Pitágoras en un triángulo rectángulo."""
+    """
+    Explicación del teorema de Pitágoras en un triángulo rectángulo.
+
+    Se aclara el rol de la hipotenusa y los catetos, y cómo obtener c
+    cuando se conocen a y b.
+    """
     return r"""
 En un **triángulo rectángulo** se cumple el teorema de Pitágoras:
 
@@ -176,7 +222,12 @@ $$c = \sqrt{a^2 + b^2}.$$
 
 
 def m_pitagoras_example() -> tuple[str, str]:
-    """Ejemplo de cálculo de hipotenusa con catetos conocidos."""
+    """
+    Ejemplo de cálculo de hipotenusa con catetos conocidos.
+
+    Usamos un triángulo clásico 6–8–10 para que el resultado
+    sea exacto y fácil de interpretar.
+    """
     a, b = 6, 8
     c = math.sqrt(a * a + b * b)
     enun = (
@@ -192,7 +243,12 @@ def m_pitagoras_example() -> tuple[str, str]:
 
 
 def m_pitagoras_exercise() -> tuple[str, float, str, str]:
-    """Genera un ejercicio de Pitágoras pidiendo la hipotenusa."""
+    """
+    Genera un ejercicio de Pitágoras pidiendo la hipotenusa.
+
+    Se eligen pares (a, b) que forman triángulos rectángulos conocidos
+    para que el resultado sea razonable y no tan feo de calcular.
+    """
     variants = [(3, 4), (5, 12), (7, 24), (9, 40), (8, 15), (12, 16)]
     a, b = random.choice(variants)
     c = math.sqrt(a * a + b * b)
@@ -210,7 +266,12 @@ def m_pitagoras_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def m_slope_explain() -> str:
-    """Explicación de la pendiente de una recta a partir de dos puntos."""
+    """
+    Explicación de la pendiente de una recta a partir de dos puntos.
+
+    Se interpreta la pendiente como “subida entre avance” (Δy / Δx),
+    aclarando el significado de cada cambio.
+    """
     return r"""
 La **pendiente** $m$ de una recta que pasa por dos puntos
 $(x_1, y_1)$ y $(x_2, y_2)$ se calcula como
@@ -225,7 +286,11 @@ En resumen: la pendiente es “**subida entre avance**”.
 
 
 def m_slope_example() -> tuple[str, str]:
-    """Ejemplo de cálculo de la pendiente a partir de dos puntos."""
+    """
+    Ejemplo de cálculo de la pendiente a partir de dos puntos.
+
+    Se muestran explícitamente los cambios Δy y Δx antes de hacer la división.
+    """
     x1, y1, x2, y2 = 1, 2, 5, 10
     m = (y2 - y1) / (x2 - x1)
     enun = (
@@ -242,7 +307,12 @@ def m_slope_example() -> tuple[str, str]:
 
 
 def m_slope_exercise() -> tuple[str, float, str, str]:
-    """Genera un ejercicio de pendiente entre dos puntos."""
+    """
+    Genera un ejercicio de pendiente entre dos puntos.
+
+    Los puntos se eligen de una lista de pares sencillos para que
+    la pendiente salga con valores razonables.
+    """
     point_sets = [
         (0, 0, 4, 6),
         (-2, 3, 1, 12),
@@ -267,6 +337,8 @@ def m_slope_exercise() -> tuple[str, float, str, str]:
 #  Lista de temas de Matemáticas
 # =========================================================
 
+# Aquí reunimos todos los temas de Matemáticas en una sola lista.
+# app.py usa esta lista para poblar la pestaña de Matemáticas.
 MATH_TOPICS: List[Topic] = [
     Topic(
         area="Matemáticas",
