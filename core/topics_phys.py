@@ -3,9 +3,12 @@
 Temas de Física para Smart Form.
 
 Cada tema se modela como un objeto Topic (ver core.utils) con:
-- Explicación teórica (con algo de notación LaTeX)
-- Ejemplo resuelto
-- Generador de ejercicios interactivos
+- Explicación teórica (con algo de notación LaTeX).
+- Ejemplo resuelto.
+- Generador de ejercicios interactivos con solución numérica.
+
+Así la app puede usar la misma estructura para todos los temas:
+explain(), example() y exercise().
 """
 
 from __future__ import annotations
@@ -21,7 +24,12 @@ from .utils import Topic
 # =========================================================
 
 def f_vel_media_explain() -> str:
-    """Explicación de velocidad media con notación LaTeX."""
+    """
+    Explicación de velocidad media con notación LaTeX.
+
+    Se introduce la idea de cuánta distancia se recorre por cada unidad
+    de tiempo, usando unidades del Sistema Internacional (m y s).
+    """
     return r"""
 La **velocidad media** relaciona el desplazamiento recorrido con el tiempo empleado:
 
@@ -36,7 +44,12 @@ La velocidad media se expresa normalmente en m/s.
 
 
 def f_vel_media_example() -> tuple[str, str]:
-    """Ejemplo resuelto de velocidad media."""
+    """
+    Ejemplo resuelto de velocidad media.
+
+    Usamos 150 m en 30 s para que el cálculo sea sencillo y se vea
+    claramente la sustitución en la fórmula.
+    """
     d, t = 150.0, 30.0
     v = d / t
     enun = (
@@ -54,6 +67,9 @@ def f_vel_media_example() -> tuple[str, str]:
 def f_vel_media_exercise() -> tuple[str, float, str, str]:
     """
     Genera un ejercicio de velocidad media.
+
+    Elegimos pares (d, t) sencillos para que la división sea razonable
+    y el enfoque esté en aplicar v = d/t con las unidades correctas.
 
     Devuelve:
         enunciado, valor_correcto, unidad, pista
@@ -75,7 +91,12 @@ def f_vel_media_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def f_ec_explain() -> str:
-    """Explicación de energía cinética con LaTeX."""
+    """
+    Explicación de energía cinética con LaTeX.
+
+    Se aclara que depende de la masa y del cuadrado de la rapidez,
+    y se enfatiza la unidad (joule) en el Sistema Internacional.
+    """
     return r"""
 La **energía cinética** es la energía asociada al movimiento de un objeto:
 
@@ -92,7 +113,12 @@ Si aumenta la masa o la rapidez, la energía cinética también aumenta.
 
 
 def f_ec_example() -> tuple[str, str]:
-    """Ejemplo resuelto de energía cinética."""
+    """
+    Ejemplo resuelto de energía cinética.
+
+    Se toma una masa de 2 kg y velocidad de 3 m/s para obtener
+    un resultado numérico entero y fácil de interpretar.
+    """
     m, v = 2.0, 3.0
     ec = 0.5 * m * v * v
     enun = (
@@ -109,7 +135,12 @@ def f_ec_example() -> tuple[str, str]:
 
 
 def f_ec_exercise() -> tuple[str, float, str, str]:
-    """Genera un ejercicio de energía cinética."""
+    """
+    Genera un ejercicio de energía cinética.
+
+    Se eligen masas y velocidades razonables para que el resultado
+    salga en el rango de algunos joules o decenas de joules.
+    """
     sets = [(1.5, 4.0), (3.0, 2.5), (5.0, 6.0), (2.2, 7.5), (4.5, 3.3)]
     m, v = random.choice(sets)
     expected = 0.5 * m * v * v
@@ -127,21 +158,30 @@ def f_ec_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def f_ohm_explain() -> str:
-    """Explicación de la ley de Ohm con LaTeX."""
+    """
+    Explicación de la ley de Ohm con LaTeX.
+
+    Se presenta la relación lineal entre voltaje, corriente y resistencia
+    en un circuito eléctrico sencillo.
+    """
     return r"""
 La **ley de Ohm** relaciona voltaje, corriente y resistencia eléctrica:
 
-$$V = I * R$$
+$$V = I \\cdot R$$
 
 donde:
 - $V$ es el voltaje (en volts, V),
 - $I$ es la corriente (en amperes, A),
-- $R$ es la resistencia (en ohms).
+- $R$ es la resistencia (en ohms, \\Omega).
 """
 
 
 def f_ohm_example() -> tuple[str, str]:
-    """Ejemplo resuelto de ley de Ohm."""
+    """
+    Ejemplo resuelto de ley de Ohm.
+
+    Se calcula el voltaje a partir de una corriente y una resistencia conocidas.
+    """
     I, R = 2.0, 10.0
     V = I * R
     enun = (
@@ -160,7 +200,11 @@ def f_ohm_exercise() -> tuple[str, float, str, str]:
     """
     Genera un ejercicio de ley de Ohm.
 
-    El modo elige aleatoriamente si se pide V, I o R.
+    De forma aleatoria se pide:
+    - el voltaje V,
+    - la corriente I,
+    - o la resistencia R,
+    a partir de los otros dos valores.
     """
     mode = random.choice(["V", "I", "R"])
 
@@ -200,7 +244,12 @@ def f_ohm_exercise() -> tuple[str, float, str, str]:
 # =========================================================
 
 def f_mrua_explain() -> str:
-    """Explicación de MRUA (velocidad final) con LaTeX."""
+    """
+    Explicación de MRUA (velocidad final) con LaTeX.
+
+    Se trabaja la ecuación v = v0 + a·t, aclarando el papel de cada
+    variable y las unidades típicas en el SI.
+    """
     return r"""
 En un **movimiento rectilíneo uniformemente acelerado (MRUA)** la velocidad cambia
 de forma lineal con el tiempo:
@@ -221,7 +270,12 @@ entonces $v$ también queda en m/s.
 
 
 def f_mrua_example() -> tuple[str, str]:
-    """Ejemplo resuelto de MRUA (cálculo de velocidad final)."""
+    """
+    Ejemplo resuelto de MRUA (cálculo de velocidad final).
+
+    Se parte de una velocidad inicial, una aceleración positiva
+    y un intervalo de tiempo para ilustrar cómo se incrementa v.
+    """
     v0, a, t = 5.0, 2.0, 3.0
     v = v0 + a * t
     enun = (
@@ -239,7 +293,12 @@ def f_mrua_example() -> tuple[str, str]:
 
 
 def f_mrua_exercise() -> tuple[str, float, str, str]:
-    """Genera un ejercicio de MRUA pidiendo la velocidad final."""
+    """
+    Genera un ejercicio de MRUA pidiendo la velocidad final.
+
+    Se eligen valores discretos para v0, a y t, de manera que
+    la operación sea sencilla pero obligue a sustituir correctamente.
+    """
     v0_values = [2.0, 4.0, 6.0]
     a_values = [1.0, 1.5, 2.0]
     t_values = [3.0, 4.0, 5.0]
@@ -264,6 +323,8 @@ def f_mrua_exercise() -> tuple[str, float, str, str]:
 #  Lista de temas de Física
 # =========================================================
 
+# Reunimos aquí todos los temas de Física para que app.py
+# pueda poblar la pestaña correspondiente con esta lista.
 PHYS_TOPICS: List[Topic] = [
     Topic(
         area="Física",
